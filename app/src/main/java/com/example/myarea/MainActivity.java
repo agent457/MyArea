@@ -128,7 +128,7 @@ public class MainActivity extends AppCompatActivity {
                 }
                 else{
                     Toast.makeText(this, "This app requires permission to be granted in order to work properly", Toast.LENGTH_SHORT).show();
-                    finish();
+
                 }
                 break;
         }
