@@ -23,8 +23,6 @@ import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.location.Priority;
 import com.google.android.gms.tasks.OnSuccessListener;
 
-import org.w3c.dom.Text;
-
 public class MainActivity extends AppCompatActivity {
 
     public static final int PERMISSIONS_FINE_LOCATION = 99;
@@ -38,15 +36,15 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        tv_lat=(TextView) findViewById(R.id.tv_lat);
-        tv_lon=(TextView) findViewById(R.id.tv_lon);
-        tv_altitude=(TextView) findViewById(R.id.tv_altitude);
-        tv_accuracy=(TextView) findViewById(R.id.tv_accuracy);
-        tv_speed=(TextView) findViewById(R.id.tv_speed);
-        tv_sensor=(TextView) findViewById(R.id.tv_sensor);
-        tv_updates=(TextView) findViewById(R.id.tv_updates);
-        sw_locationsupdates =(Switch) findViewById(R.id.sw_locationsupdates);
-        sw_gps =(Switch) findViewById(R.id.sw_gps);
+        tv_lat= findViewById(R.id.tv_lat);
+        tv_lon= findViewById(R.id.tv_lon);
+        tv_altitude= findViewById(R.id.tv_altitude);
+        tv_accuracy= findViewById(R.id.tv_accuracy);
+        tv_speed= findViewById(R.id.tv_speed);
+        tv_sensor= findViewById(R.id.tv_sensor);
+        tv_updates= findViewById(R.id.tv_updates);
+        sw_locationsupdates = findViewById(R.id.sw_locationsupdates);
+        sw_gps = findViewById(R.id.sw_gps);
 
         locationRequest = new LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 100)
                 .setWaitForAccurateLocation(false)
