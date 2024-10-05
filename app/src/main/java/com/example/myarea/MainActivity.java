@@ -1,17 +1,15 @@
 package com.example.myarea;
 
 import androidx.annotation.NonNull;
-import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.SwitchCompat;
 import androidx.core.app.ActivityCompat;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.pm.PackageManager;
 import android.location.Location;
-import android.os.Build;
 import android.os.Bundle;
-import android.view.View;
-import android.widget.Switch;
+import android.view.MenuItem;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -21,13 +19,15 @@ import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.location.Priority;
-import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.android.material.navigation.NavigationBarView;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends BaseActivity {
 
     public static final int PERMISSIONS_FINE_LOCATION = 99;
+    BottomNavigationView navbar;
     TextView tv_lat, tv_lon, tv_altitude, tv_accuracy, tv_speed, tv_sensor, tv_updates;
-    Switch sw_locationsupdates, sw_gps;
+    SwitchCompat sw_locationUpdates, sw_gps;
     FusedLocationProviderClient fusedLocationProviderClient;
     LocationRequest locationRequest;
     LocationCallback locationCallBack;
@@ -36,15 +36,14 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        tv_lat= findViewById(R.id.tv_lat);
-        tv_lon= findViewById(R.id.tv_lon);
-        tv_altitude= findViewById(R.id.tv_altitude);
-        tv_accuracy= findViewById(R.id.tv_accuracy);
-        tv_speed= findViewById(R.id.tv_speed);
-        tv_sensor= findViewById(R.id.tv_sensor);
-        tv_updates= findViewById(R.id.tv_updates);
-        sw_locationsupdates = findViewById(R.id.sw_locationsupdates);
-        sw_gps = findViewById(R.id.sw_gps);
+        init();
+
+        navbar.setOnItemSelectedListener(new NavigationBarView.OnItemSelectedListener() {
+            @Override
+            public boolean onNavigationItemSelected(@NonNull MenuItem item) {
+                return onOptionsItemSelected(item);
+            }
+        });
 
         locationRequest = new LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 100)
                 .setWaitForAccurateLocation(false)
@@ -59,37 +58,31 @@ public class MainActivity extends AppCompatActivity {
                 updateUIValues(locationResult.getLastLocation());
             }
         };
-        sw_gps.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if(sw_gps.isChecked()){
-                    locationRequest = new LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 100)
-                            .setWaitForAccurateLocation(false)
-                            .setMinUpdateIntervalMillis(2000)
-                            .setMaxUpdateDelayMillis(100)
-                            .build();
-                    tv_sensor.setText("Using GPS sensors");
-                }
-                else{
-                    locationRequest = new LocationRequest.Builder(Priority.PRIORITY_BALANCED_POWER_ACCURACY, 100)
-                            .setWaitForAccurateLocation(false)
-                            .setMinUpdateIntervalMillis(2000)
-                            .setMaxUpdateDelayMillis(100)
-                            .build();
-                    tv_sensor.setText("Using Towers + WIFI");
-                }
+        sw_gps.setOnClickListener(v -> {
+            if(sw_gps.isChecked()){
+                locationRequest = new LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 100)
+                        .setWaitForAccurateLocation(false)
+                        .setMinUpdateIntervalMillis(2000)
+                        .setMaxUpdateDelayMillis(100)
+                        .build();
+                tv_sensor.setText("Using GPS sensors");
+            }
+            else{
+                locationRequest = new LocationRequest.Builder(Priority.PRIORITY_BALANCED_POWER_ACCURACY, 100)
+                        .setWaitForAccurateLocation(false)
+                        .setMinUpdateIntervalMillis(2000)
+                        .setMaxUpdateDelayMillis(100)
+                        .build();
+                tv_sensor.setText("Using Towers + WIFI");
             }
         });
 
-        sw_locationsupdates.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if(sw_locationsupdates.isChecked()){
-                    StartLocationUpdates();
-                }
-                else{
-                    stopLocationUpdates();
-                }
+        sw_locationUpdates.setOnClickListener(v -> {
+            if(sw_locationUpdates.isChecked()){
+                StartLocationUpdates();
+            }
+            else{
+                stopLocationUpdates();
             }
         });
 
@@ -119,33 +112,23 @@ public class MainActivity extends AppCompatActivity {
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
 
-        switch (requestCode){
-            case PERMISSIONS_FINE_LOCATION:
-                if(grantResults[0] == PackageManager.PERMISSION_GRANTED){
-                    updateGPS();
-                }
-                else{
-                    Toast.makeText(this, "This app requires permission to be granted in order to work properly", Toast.LENGTH_SHORT).show();
+        if (requestCode == PERMISSIONS_FINE_LOCATION) {
+            if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                updateGPS();
+            } else {
+                Toast.makeText(this, "This app requires permission to be granted in order to work properly", Toast.LENGTH_SHORT).show();
 
-                }
-                break;
+            }
         }
     }
 
     private void updateGPS(){
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(MainActivity.this);
         if(ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED){
-            fusedLocationProviderClient.getLastLocation().addOnSuccessListener(this, new OnSuccessListener<Location>() {
-                @Override
-                public void onSuccess(Location location) {
-                    updateUIValues(location);
-                }
-            });
+            fusedLocationProviderClient.getLastLocation().addOnSuccessListener(this, this::updateUIValues);
         }
         else{
-            if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M){
-                requestPermissions(new String[] {Manifest.permission.ACCESS_FINE_LOCATION}, PERMISSIONS_FINE_LOCATION);
-            }
+            requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, PERMISSIONS_FINE_LOCATION);
         }
     }
     private void updateUIValues(Location location){
@@ -166,6 +149,18 @@ public class MainActivity extends AppCompatActivity {
             tv_speed.setText("Not available");
         }
 
+    }
+    private void init(){
+        navbar=findViewById(R.id.bottom_navbar);
+        tv_lat= findViewById(R.id.tv_lat);
+        tv_lon= findViewById(R.id.tv_lon);
+        tv_altitude= findViewById(R.id.tv_altitude);
+        tv_accuracy= findViewById(R.id.tv_accuracy);
+        tv_speed= findViewById(R.id.tv_speed);
+        tv_sensor= findViewById(R.id.tv_sensor);
+        tv_updates= findViewById(R.id.tv_updates);
+        sw_locationUpdates = findViewById(R.id.sw_locationsupdates);
+        sw_gps = findViewById(R.id.sw_gps);
     }
 
 }

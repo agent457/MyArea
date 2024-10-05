@@ -2,4 +2,8 @@
     <string name="app_name">MyArea</string>
     <string name="resume">Resume Location Updates</string>
     <string name="pause">Pause Location Updates</string>
+    <string name="title_activity_map_view">MapView</string>
+    <string name="title_home">Home</string>
+    <string name="title_dashboard">Dashboard</string>
+    <string name="title_notifications">Notifications</string>
 </resources>
