@@ -19,6 +19,7 @@ import com.google.android.material.navigation.NavigationBarView;
 public class MapActivity extends BaseActivity implements View.OnTouchListener {
     BottomNavigationView navbar;
     ImageView imageView;
+    private float xCoOrdinate, yCoOrdinate;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -30,12 +31,7 @@ public class MapActivity extends BaseActivity implements View.OnTouchListener {
             return insets;
         });
         init();
-        navbar.setOnItemSelectedListener(new NavigationBarView.OnItemSelectedListener() {
-            @Override
-            public boolean onNavigationItemSelected(@NonNull MenuItem item) {
-                return onOptionsItemSelected(item);
-            }
-        });
+        navbar.setOnItemSelectedListener(item -> onOptionsItemSelected(item));
     }
     @SuppressLint("ClickableViewAccessibility")
     public void init(){
@@ -45,16 +41,14 @@ public class MapActivity extends BaseActivity implements View.OnTouchListener {
     }
 
     @Override
-    public boolean onTouch(View v, MotionEvent event) {
-        switch (event.getAction()) {
+    public boolean onTouch(View view, MotionEvent event) {
+        switch (event.getActionMasked()) {
+            case MotionEvent.ACTION_DOWN:
+                xCoOrdinate = view.getX() - event.getRawX();
+                yCoOrdinate = view.getY() - event.getRawY();
+                break;
             case MotionEvent.ACTION_MOVE:
-                float dX = v.getX() - event.getRawX();
-                float dY = v.getY() - event.getRawY();
-                v.animate()
-                        .x(event.getRawX() + dX)
-                        .y(event.getRawY() + dY)
-                        .setDuration(0)
-                        .start();
+                view.animate().x(event.getRawX() + xCoOrdinate).y(event.getRawY() + yCoOrdinate).setDuration(0).start();
                 break;
             default:
                 return false;
