@@ -1,25 +1,26 @@
 package com.example.myarea;
 
-import android.annotation.SuppressLint;
+import android.graphics.PointF;
 import android.os.Bundle;
-import android.view.MenuItem;
+import android.util.DisplayMetrics;
 import android.view.MotionEvent;
 import android.view.View;
-import android.widget.ImageView;
+import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
-import androidx.annotation.NonNull;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import com.davemorrissey.labs.subscaleview.ImageSource;
+import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
-import com.google.android.material.navigation.NavigationBarView;
 
-public class MapActivity extends BaseActivity implements View.OnTouchListener {
+public class MapActivity extends BaseActivity implements RotationGestureDetector.OnRotationGestureListener, View.OnTouchListener {
     BottomNavigationView navbar;
-    ImageView imageView;
-    private float xCoOrdinate, yCoOrdinate;
+    SubsamplingScaleImageView mapImage;
+    private RotationGestureDetector mRotationDetector;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -31,28 +32,26 @@ public class MapActivity extends BaseActivity implements View.OnTouchListener {
             return insets;
         });
         init();
-        navbar.setOnItemSelectedListener(item -> onOptionsItemSelected(item));
+        navbar.setOnItemSelectedListener(this::onOptionsItemSelected);
     }
-    @SuppressLint("ClickableViewAccessibility")
     public void init(){
         navbar=findViewById(R.id.bottom_navbar1);
-        imageView=findViewById(R.id.imageView);
-        imageView.setOnTouchListener(this);
+        mapImage = findViewById(R.id.map);
+        mapImage.setOnTouchListener(this);
+        mRotationDetector = new RotationGestureDetector(this);
+        mapImage.setImage(ImageSource.resource(R.drawable.checkerboard));
+        mapImage.setPanLimit(SubsamplingScaleImageView.PAN_LIMIT_OUTSIDE);
     }
 
     @Override
-    public boolean onTouch(View view, MotionEvent event) {
-        switch (event.getActionMasked()) {
-            case MotionEvent.ACTION_DOWN:
-                xCoOrdinate = view.getX() - event.getRawX();
-                yCoOrdinate = view.getY() - event.getRawY();
-                break;
-            case MotionEvent.ACTION_MOVE:
-                view.animate().x(event.getRawX() + xCoOrdinate).y(event.getRawY() + yCoOrdinate).setDuration(0).start();
-                break;
-            default:
-                return false;
-        }
-        return true;
+    public void OnRotation(RotationGestureDetector rotationDetector) {
+        float angle = rotationDetector.getAngle();
+        mapImage.setRotation(mapImage.getRotation() + (-angle));
+    }
+
+    @Override
+    public boolean onTouch(View v, MotionEvent event) {
+        mRotationDetector.onTouchEvent(event);
+        return false;
     }
 }
