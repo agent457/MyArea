@@ -1,25 +1,19 @@
 package com.example.myarea;
 
-import android.graphics.PointF;
 import android.os.Bundle;
-import android.util.DisplayMetrics;
 import android.view.MotionEvent;
 import android.view.View;
-import android.widget.Toast;
-
 import androidx.activity.EdgeToEdge;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
 import com.davemorrissey.labs.subscaleview.ImageSource;
-import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
-public class MapActivity extends BaseActivity implements RotationGestureDetector.OnRotationGestureListener, View.OnTouchListener {
+public class MapActivity extends BaseActivity implements View.OnTouchListener {
     BottomNavigationView navbar;
-    SubsamplingScaleImageView mapImage;
-    private RotationGestureDetector mRotationDetector;
+    RotatableImageView mapImage;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -36,22 +30,33 @@ public class MapActivity extends BaseActivity implements RotationGestureDetector
     }
     public void init(){
         navbar=findViewById(R.id.bottom_navbar1);
-        mapImage = findViewById(R.id.map);
-        mapImage.setOnTouchListener(this);
-        mRotationDetector = new RotationGestureDetector(this);
+        mapImage=findViewById(R.id.map);
         mapImage.setImage(ImageSource.resource(R.drawable.checkerboard));
-        mapImage.setPanLimit(SubsamplingScaleImageView.PAN_LIMIT_OUTSIDE);
+        mapImage.setOnTouchListener(this);
     }
 
     @Override
-    public void OnRotation(RotationGestureDetector rotationDetector) {
-        float angle = rotationDetector.getAngle();
-        mapImage.setRotation(mapImage.getRotation() + (-angle));
-    }
+    public boolean onTouch(View view, MotionEvent event) {
+        if(view==mapImage){
+            float startAngle = 0f;
+            if (event.getPointerCount() == 2) { // Detects two fingers for rotation
+                float x = event.getX(0) - event.getX(1);
+                float y = event.getY(0) - event.getY(1);
+                float angle = (float) Math.toDegrees(Math.atan2(y, x));
 
-    @Override
-    public boolean onTouch(View v, MotionEvent event) {
-        mRotationDetector.onTouchEvent(event);
+                switch (event.getActionMasked()) {
+                    case MotionEvent.ACTION_POINTER_DOWN:
+                        startAngle = angle;
+                        break;
+                    case MotionEvent.ACTION_MOVE:
+                        float deltaAngle = angle - startAngle;
+                        mapImage.setRotation(mapImage.getRotation() + deltaAngle);
+                        startAngle = angle;
+                        break;
+                }
+            }
+            return true;
+        }
         return false;
     }
 }

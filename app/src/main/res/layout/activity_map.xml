@@ -21,14 +21,9 @@
         app:layout_constraintVertical_bias="1.0"
         app:menu="@menu/bottom_navbar" />
 
-    <com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView
+    <com.example.myarea.RotatableImageView
         android:id="@+id/map"
-        android:layout_width="0dp"
+        android:layout_width="match_parent"
         android:layout_height="match_parent"
-        app:layout_constraintDimensionRatio="1:1"
-        app:layout_constraintBottom_toTopOf="@+id/bottom_navbar1"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
+        android:clickable="true"/>
 </androidx.constraintlayout.widget.ConstraintLayout>
