@@ -1,42 +1,38 @@
 package com.example.myarea;
 
-import android.Manifest;
-import android.content.Context;
-import android.content.pm.PackageManager;
+import android.app.Activity;
+import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
-import android.preference.PreferenceManager;
-import android.view.MenuItem;
-import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
-import androidx.annotation.NonNull;
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
+import androidx.annotation.Nullable;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+
 import com.google.android.material.bottomnavigation.BottomNavigationView;
-import com.google.android.material.navigation.NavigationBarView;
 
-import org.osmdroid.config.Configuration;
-import org.osmdroid.tileprovider.tilesource.TileSourceFactory;
-import org.osmdroid.views.MapView;
+import org.mapsforge.core.model.LatLong;
+import org.mapsforge.map.android.graphics.AndroidGraphicFactory;
+import org.mapsforge.map.android.util.AndroidUtil;
+import org.mapsforge.map.android.view.MapView;
+import org.mapsforge.map.datastore.MapDataStore;
+import org.mapsforge.map.layer.cache.TileCache;
+import org.mapsforge.map.layer.renderer.TileRendererLayer;
+import org.mapsforge.map.reader.MapFile;
+import org.mapsforge.map.rendertheme.InternalRenderTheme;
 
-import java.util.ArrayList;
+import java.io.FileInputStream;
 
 public class MapActivity extends BaseActivity {
-    private final int REQUEST_PERMISSIONS_REQUEST_CODE = 1;
-    private MapView map = null;
+    private static final int SELECT_MAP_FILE = 0;
     private BottomNavigationView navbar;
+    private MapView map;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        requestPermissionsIfNecessary(new String[]{
-                Manifest.permission.ACCESS_FINE_LOCATION,
-                Manifest.permission.WRITE_EXTERNAL_STORAGE
-        });
-        Context ctx = getApplicationContext();
-        Configuration.getInstance().load(ctx, PreferenceManager.getDefaultSharedPreferences(ctx));
+        AndroidGraphicFactory.createInstance(getApplication());
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_map);
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
@@ -45,67 +41,91 @@ public class MapActivity extends BaseActivity {
             return insets;
         });
         init();
-        navbar.setOnItemSelectedListener(new NavigationBarView.OnItemSelectedListener() {
-            @Override
-            public boolean onNavigationItemSelected(@NonNull MenuItem item) {
-                return onOptionsItemSelected(item);
-            }
-        });
+        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        intent.setType("*/*");
+        startActivityForResult(intent, SELECT_MAP_FILE);
     }
     public void init(){
+        navbar = findViewById(R.id.bottom_navbar1);
         map = findViewById(R.id.map);
-        map.setTileSource(TileSourceFactory.MAPNIK);
-        map.setMultiTouchControls(true);
-        navbar=findViewById(R.id.bottom_navbar1);
-    }
-    @Override
-    public void onResume() {
-        super.onResume();
-        //this will refresh the osmdroid configuration on resuming.
-        //if you make changes to the configuration, use
-        //SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-        //Configuration.getInstance().load(this, PreferenceManager.getDefaultSharedPreferences(this));
-        map.onResume(); //needed for compass, my location overlays, v6.0.0 and up
-    }
-    @Override
-    public void onPause() {
-        super.onPause();
-        //this will refresh the osmdroid configuration on resuming.
-        //if you make changes to the configuration, use
-        //SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-        //Configuration.getInstance().save(this, prefs);
-        map.onPause();  //needed for compass, my location overlays, v6.0.0 and up
     }
 
     @Override
-    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        ArrayList<String> permissionsToRequest = new ArrayList<>();
-        for (int i = 0; i < grantResults.length; i++) {
-            permissionsToRequest.add(permissions[i]);
-        }
-        if (!permissionsToRequest.isEmpty()) {
-            ActivityCompat.requestPermissions(
-                    this,
-                    permissionsToRequest.toArray(new String[0]),
-                    REQUEST_PERMISSIONS_REQUEST_CODE);
-        }
-    }
-
-    private void requestPermissionsIfNecessary(String[] permissions) {
-        ArrayList<String> permissionsToRequest = new ArrayList<>();
-        for (String permission : permissions) {
-            if (ContextCompat.checkSelfPermission(this, permission)
-                    != PackageManager.PERMISSION_GRANTED) {
-                // Permission is not granted
-                permissionsToRequest.add(permission);
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == SELECT_MAP_FILE && resultCode == Activity.RESULT_OK) {
+            if (data != null) {
+                Uri uri = data.getData();
+                openMap(uri);
             }
         }
-        if (!permissionsToRequest.isEmpty()) {
-            ActivityCompat.requestPermissions(
+    }
+    private void openMap(Uri uri) {
+        try {
+            /*
+             * We then make some simple adjustments, such as showing a scale bar and zoom controls.
+             */
+            map.getMapScaleBar().setVisible(true);
+            map.setBuiltInZoomControls(true);
+
+            /*
+             * To avoid redrawing all the tiles all the time, we need to set up a tile cache with an
+             * utility method.
+             */
+            TileCache tileCache = AndroidUtil.createTileCache(
                     this,
-                    permissionsToRequest.toArray(new String[0]),
-                    REQUEST_PERMISSIONS_REQUEST_CODE);
+                    "mapcache",
+                    map.getModel().displayModel.getTileSize(),
+                    1f,
+                    map.getModel().frameBufferModel.getOverdrawFactor());
+
+            /*
+             * Now we need to set up the process of displaying a map. A map can have several layers,
+             * stacked on top of each other. A layer can be a map or some visual elements, such as
+             * markers. Here we only show a map based on a mapsforge map file. For this we need a
+             * TileRendererLayer. A TileRendererLayer needs a TileCache to hold the generated map
+             * tiles, a map file from which the tiles are generated and Rendertheme that defines the
+             * appearance of the map.
+             */
+            FileInputStream fis = (FileInputStream) getContentResolver().openInputStream(uri);
+            assert fis != null;
+            MapDataStore mapDataStore = new MapFile(fis);
+            TileRendererLayer tileRendererLayer = new TileRendererLayer(
+                    tileCache,
+                    mapDataStore,
+                    map.getModel().mapViewPosition,
+                    AndroidGraphicFactory.INSTANCE);
+            tileRendererLayer.setXmlRenderTheme(InternalRenderTheme.DEFAULT);
+
+            /*
+             * On its own a tileRendererLayer does not know where to display the map, so we need to
+             * associate it with our map.
+             */
+            map.getLayerManager().getLayers().add(tileRendererLayer);
+
+            /*
+             * The map also needs to know which area to display and at what zoom level.
+             * Note: this map position is specific to Berlin area.
+             */
+            map.setCenter(new LatLong(31.940873, 34.824437));
+            map.setZoomLevel((byte) 15);
+        } catch (Exception e) {
+            /*
+             * In case of map file errors avoid crash, but developers should handle these cases!
+             */
+            e.printStackTrace();
         }
+    }
+
+    @Override
+    protected void onDestroy() {
+        /*
+         * Whenever your activity exits, some cleanup operations have to be performed lest your app
+         * runs out of memory.
+         */
+        map.destroyAll();
+        AndroidGraphicFactory.clearResourceMemoryCache();
+        super.onDestroy();
     }
 }
