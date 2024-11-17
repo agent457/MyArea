@@ -19,7 +19,7 @@
         android:theme="@style/Theme.MyArea"
         tools:targetApi="31">
         <activity
-            android:name=".database"
+            android:name=".DatabaseEditor"
             android:exported="false" />
         <activity
             android:name=".MapActivity"
