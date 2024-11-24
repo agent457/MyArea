@@ -16,4 +16,9 @@
     <string name="poi_editor">POI Editor</string>
     <string name="latitude">Latitude</string>
     <string name="id">ID</string>
+    <string name="lv_name">Name:</string>
+    <string name="lv_id">ID:</string>
+    <string name="lv_longitude">Longitude:</string>
+    <string name="lv_latitude">Latitude:</string>
+    <string name="lv_description">Description:</string>
 </resources>

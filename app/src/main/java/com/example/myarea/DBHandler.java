@@ -9,12 +9,12 @@ public class DBHandler extends SQLiteOpenHelper {
     private String DB_NAME;
     private static final int DB_VERSION = 1;
     // POIs Table
-    private static final String POIs = "POIs";
-    private static final String ID_COL = "id";
-    private static final String NAME_COL = "name";
-    private static final String DESCRIPTION_COL = "description";
-    private static final String LONG_COL = "lon";
-    private static final String LAT_COL = "lat";
+    private final String POIs = "POIs";
+    private final String ID_COL = "id";
+    private final String NAME_COL = "name";
+    private final String DESCRIPTION_COL = "description";
+    private final String LONG_COL = "lon";
+    private final String LAT_COL = "lat";
     //
 
 
@@ -52,5 +52,24 @@ public class DBHandler extends SQLiteOpenHelper {
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
         db.execSQL("DROP TABLE IF EXISTS " + POIs);
         onCreate(db);
+    }
+
+    public String getDB_NAME() {
+        return DB_NAME;
+    }
+    public String getID_COL() {
+        return ID_COL;
+    }
+    public String getDESCRIPTION_COL() {
+        return DESCRIPTION_COL;
+    }
+    public String getNAME_COL() {
+        return NAME_COL;
+    }
+    public String getLAT_COL() {
+        return LAT_COL;
+    }
+    public String getLONG_COL() {
+        return LONG_COL;
     }
 }
