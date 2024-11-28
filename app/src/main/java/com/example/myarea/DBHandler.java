@@ -2,8 +2,12 @@ package com.example.myarea;
 
 import android.content.ContentValues;
 import android.content.Context;
+import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.widget.ArrayAdapter;
+
+import java.util.ArrayList;
 
 public class DBHandler extends SQLiteOpenHelper {
     private String DB_NAME;
@@ -52,6 +56,55 @@ public class DBHandler extends SQLiteOpenHelper {
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
         db.execSQL("DROP TABLE IF EXISTS " + POIs);
         onCreate(db);
+    }
+    public ArrayList<POI> loadDB(){
+        ArrayList<POI> POIs = new ArrayList<>();
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = null;
+        String query = "SELECT id, name, description, lon, lat FROM POIs";
+        try {
+            cursor = db.rawQuery(query, null);
+            while (cursor.moveToNext()){
+                int id = cursor.getInt(cursor.getColumnIndexOrThrow(this.getID_COL()));
+                String name = cursor.getString(cursor.getColumnIndexOrThrow(this.getNAME_COL()));
+                String description = cursor.getString(cursor.getColumnIndexOrThrow(this.getDESCRIPTION_COL()));
+                double lon = cursor.getDouble(cursor.getColumnIndexOrThrow(this.getLONG_COL()));
+                double lat = cursor.getDouble(cursor.getColumnIndexOrThrow(this.getLAT_COL()));
+
+                POI poi = new POI(id, name, description, lon, lat);
+                POIs.add(poi);
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }finally {
+            if (cursor!=null){
+                cursor.close();
+            }
+        }
+        return POIs;
+    }
+    public POI getLast(){
+        Cursor cursor = null;
+        SQLiteDatabase db = this.getReadableDatabase();
+        POI poi = null;
+        String query = "SELECT id, name, description, lon, lat FROM POIs";
+        try {
+            cursor = db.rawQuery(query,null);
+            cursor.moveToLast();
+            int id = cursor.getInt(cursor.getColumnIndexOrThrow(this.getID_COL()));
+            String name = cursor.getString(cursor.getColumnIndexOrThrow(this.getNAME_COL()));
+            String description = cursor.getString(cursor.getColumnIndexOrThrow(this.getDESCRIPTION_COL()));
+            double lon = cursor.getDouble(cursor.getColumnIndexOrThrow(this.getLONG_COL()));
+            double lat = cursor.getDouble(cursor.getColumnIndexOrThrow(this.getLAT_COL()));
+            poi = new POI(id,name,description,lon,lat);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }finally {
+            if(cursor!=null){
+                cursor.close();
+            }
+        }
+        return poi;
     }
 
     public String getDB_NAME() {
