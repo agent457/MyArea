@@ -13,6 +13,7 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentTransaction;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.navigation.NavigationBarView;
@@ -36,6 +37,7 @@ public class MainActivity extends AppCompatActivity {
         });
         init();
         navbar.setOnItemSelectedListener(new NavigationBarView.OnItemSelectedListener() {
+            Fragment currentFragment = getSupportFragmentManager().findFragmentById(R.id.main_fragment);
             @Override
             public boolean onNavigationItemSelected(@NonNull MenuItem item) {
                 if (item.getItemId()==R.id.map){
@@ -57,11 +59,5 @@ public class MainActivity extends AppCompatActivity {
         CoordinatesFragment = new CoordinatesFragment();
         EditorFragment = new EditorFragment();
         getSupportFragmentManager().beginTransaction().replace(R.id.main_fragment, MapFragment).commit();
-    }
-    private void clearSavedMapUri(){
-        SharedPreferences sharedPreferences = getSharedPreferences("MapPreferences", Context.MODE_PRIVATE);
-        SharedPreferences.Editor editor = sharedPreferences.edit();
-        editor.remove("selected_map_uri");
-        editor.apply();
     }
 }

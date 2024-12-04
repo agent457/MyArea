@@ -1,11 +1,13 @@
 package com.example.myarea;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.database.Cursor;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Bundle;
@@ -13,8 +15,11 @@ import android.os.Bundle;
 import androidx.annotation.Nullable;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.core.content.FileProvider;
 import androidx.fragment.app.Fragment;
 
+import android.provider.OpenableColumns;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -33,6 +38,11 @@ import org.mapsforge.map.rendertheme.InternalRenderTheme;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Objects;
 
@@ -95,10 +105,13 @@ public class MapFragment extends Fragment {
         AndroidGraphicFactory.createInstance(requireActivity().getApplication());
         init(view);
 
-        Uri savedUri = getSavedMapUri();
-        if(savedUri != null){
-            openMap(savedUri);
-        } else {
+        SharedPreferences sharedPreferences = requireContext().getSharedPreferences("MapPreferences", Context.MODE_PRIVATE);
+        String mapFileName = sharedPreferences.getString("selected_map_file", null);
+        if(mapFileName!=null){
+            File savedFile = new File(requireContext().getFilesDir(), mapFileName);
+            Uri fileUri = FileProvider.getUriForFile(requireContext(), requireContext().getPackageName() + ".fileprovider", savedFile);
+            openMap(fileUri);
+        }else {
             Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
             intent.addCategory(Intent.CATEGORY_OPENABLE);
             intent.setType("*/*");
@@ -106,18 +119,6 @@ public class MapFragment extends Fragment {
         }
 
         return view;
-    }
-
-    private Uri getSavedMapUri() {
-        SharedPreferences sharedPreferences = requireContext().getSharedPreferences("MapPreferences", Context.MODE_PRIVATE);
-        String uriString = sharedPreferences.getString("selected_map_uri", null);
-        if(uriString!=null){
-            Uri uri = Uri.parse(uriString);
-            if(uri != null && new File(uri.getPath()).exists()){
-                return uri;
-            }
-        }
-        return null; // No saved URI
     }
 
     public void init(View view){
@@ -132,17 +133,15 @@ public class MapFragment extends Fragment {
             if (data != null) {
                 Uri uri = data.getData();
                 assert uri != null;
-                saveSelectedMapURI(uri);
+                String fileName = getFileNameFromUri(uri);
+                saveFileFromUri(uri, fileName);
+                SharedPreferences sharedPreferences = requireContext().getSharedPreferences("MapPreferences", Context.MODE_PRIVATE);
+                SharedPreferences.Editor editor = sharedPreferences.edit();
+                editor.putString("selected_map_file", fileName);
+                editor.apply();
                 openMap(uri);
             }
         }
-    }
-
-    private void saveSelectedMapURI(Uri uri) {
-        SharedPreferences sharedPreferences = requireContext().getSharedPreferences("MapPreferences", Context.MODE_PRIVATE);
-        SharedPreferences.Editor editor = sharedPreferences.edit();
-        editor.putString("selected_map_uri", uri.toString());
-        editor.apply();
     }
 
     private void openMap(Uri uri) {
@@ -226,4 +225,58 @@ public class MapFragment extends Fragment {
             map.getLayerManager().getLayers().add(marker);
         }
     }
+    public void saveFileFromUri(Uri uri, String fileName) {
+        try {
+            // Get InputStream from URI
+            InputStream inputStream = requireContext().getContentResolver().openInputStream(uri);
+
+            // Define the destination file
+            File destinationFile = new File(requireContext().getFilesDir(), fileName);
+
+            // Write to the destination file
+            OutputStream outputStream = new FileOutputStream(destinationFile);
+            byte[] buffer = new byte[1024];
+            int bytesRead;
+
+            while ((bytesRead = inputStream.read(buffer)) != -1) {
+                outputStream.write(buffer, 0, bytesRead);
+            }
+
+            // Close streams
+            inputStream.close();
+            outputStream.close();
+
+            Log.d("SaveFile", "File saved successfully at " + destinationFile.getAbsolutePath());
+        } catch (Exception e) {
+            e.printStackTrace();
+            Log.e("SaveFile", "Error saving file: " + e.getMessage());
+        }
+    }
+    @SuppressLint("Range")
+    private String getFileNameFromUri(Uri uri) {
+        String fileName = null;
+
+        // Check if the URI scheme is content
+        if ("content".equalsIgnoreCase(uri.getScheme())) {
+            try (Cursor cursor = requireContext().getContentResolver().query(uri, null, null, null, null)) {
+                if (cursor != null && cursor.moveToFirst()) {
+                    // Get the display name from the cursor
+                    fileName = cursor.getString(cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME));
+                }
+            }
+        } else if ("file".equalsIgnoreCase(uri.getScheme())) {
+            // If the scheme is file, extract the name directly
+            fileName = new File(uri.getPath()).getName();
+        }
+
+        return fileName;
+    }
+    private void clearSavedMapUri(){
+        SharedPreferences sharedPreferences = requireContext().getSharedPreferences("MapPreferences", Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.remove("selected_map_file");
+        editor.apply();
+    }
+
+
 }
