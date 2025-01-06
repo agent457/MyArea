@@ -27,6 +27,11 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths"/>
         </provider>
+        <provider
+            android:authorities="${applicationId}.fileprovider"
+            android:name=".SearchSuggestionContentProvider"
+            android:exported="false"
+            android:grantUriPermissions="true"/>
         <activity
             android:name=".MainActivity"
             android:exported="true">

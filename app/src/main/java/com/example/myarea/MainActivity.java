@@ -25,6 +25,7 @@ public class MainActivity extends AppCompatActivity {
     BottomNavigationView navbar;
     Fragment MapFragment, CoordinatesFragment, EditorFragment;
 
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);

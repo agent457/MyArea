@@ -8,6 +8,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
+import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Bundle;
@@ -23,6 +24,8 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.SearchView;
+import android.widget.Toast;
 
 import org.mapsforge.core.graphics.Bitmap;
 import org.mapsforge.core.model.LatLong;
@@ -57,6 +60,7 @@ public class MapFragment extends Fragment {
     private MapView map;
     private DBHandler db;
     private ArrayList<POI> POIs;
+    private SearchView searchView;
 
     // TODO: Rename parameter arguments, choose names that match
     // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
@@ -117,6 +121,18 @@ public class MapFragment extends Fragment {
             intent.setType("*/*");
             startActivityForResult(intent, SELECT_MAP_FILE);
         }
+        searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+            @Override
+            public boolean onQueryTextSubmit(String query) {
+                Toast.makeText(requireContext(),query,Toast.LENGTH_SHORT).show();
+                return false;
+            }
+
+            @Override
+            public boolean onQueryTextChange(String newText) {
+                return false;
+            }
+        });
 
         return view;
     }
@@ -125,6 +141,7 @@ public class MapFragment extends Fragment {
         map = view.findViewById(R.id.map);
         db = new DBHandler(requireContext(),"Yoana");
         POIs = db.loadDB();
+        searchView = view.findViewById(R.id.search);
     }
     @Override
     public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
@@ -217,9 +234,11 @@ public class MapFragment extends Fragment {
         super.onDestroy();
     }
     public void loadPOIs(){
-        Drawable drawable = ContextCompat.getDrawable(requireContext(),R.drawable.poi);
-        assert drawable != null;
-        Bitmap bitmap = AndroidGraphicFactory.convertToBitmap(drawable);
+        Drawable drawableU = ContextCompat.getDrawable(requireContext(),R.drawable.poi);
+        assert drawableU != null;
+        android.graphics.Bitmap bitmapU = ((BitmapDrawable)drawableU).getBitmap();
+        Drawable drawableC = new BitmapDrawable(getResources(), android.graphics.Bitmap.createScaledBitmap(bitmapU,50,50,true));
+        Bitmap bitmap = AndroidGraphicFactory.convertToBitmap(drawableC);
         for(POI poi:POIs) {
             Marker marker = new Marker(new LatLong(poi.getLat(),poi.getLong()),bitmap,0,-120);
             map.getLayerManager().getLayers().add(marker);
@@ -277,6 +296,4 @@ public class MapFragment extends Fragment {
         editor.remove("selected_map_file");
         editor.apply();
     }
-
-
 }

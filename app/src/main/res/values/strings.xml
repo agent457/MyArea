@@ -21,6 +21,6 @@
     <string name="lv_longitude">Longitude:</string>
     <string name="lv_latitude">Latitude:</string>
     <string name="lv_description">Description:</string>
-    <string name="random_example">For Example: Room </string>
+    <string name="random_example">Search Room 60</string>
     <string name="map_description">This is a map of</string>
 </resources>
