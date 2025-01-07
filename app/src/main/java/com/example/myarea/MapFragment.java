@@ -2,6 +2,7 @@ package com.example.myarea;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.app.SearchManager;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
@@ -121,10 +122,14 @@ public class MapFragment extends Fragment {
             intent.setType("*/*");
             startActivityForResult(intent, SELECT_MAP_FILE);
         }
+
+        SearchManager searchManager = (SearchManager) requireActivity().getSystemService(Context.SEARCH_SERVICE);
+        if(searchManager!=null){
+            searchView.setSearchableInfo(searchManager.getSearchableInfo(requireActivity().getComponentName()));
+        }
         searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
             @Override
             public boolean onQueryTextSubmit(String query) {
-                Toast.makeText(requireContext(),query,Toast.LENGTH_SHORT).show();
                 return false;
             }
 
@@ -134,7 +139,19 @@ public class MapFragment extends Fragment {
             }
         });
 
+
+
         return view;
+    }
+
+    private void handleIntent(Intent intent) {
+        if (Intent.ACTION_SEARCH.equals(intent.getAction())){
+            String query = intent.getStringExtra(SearchManager.QUERY);
+            doMySearch(query);
+        }
+    }
+
+    private void doMySearch(String query) {
     }
 
     public void init(View view){

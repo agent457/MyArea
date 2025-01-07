@@ -28,7 +28,7 @@
                 android:resource="@xml/file_paths"/>
         </provider>
         <provider
-            android:authorities="${applicationId}.fileprovider"
+            android:authorities="com.example.searchsuggestion.provider"
             android:name=".SearchSuggestionContentProvider"
             android:exported="false"
             android:grantUriPermissions="true"/>
@@ -37,9 +37,13 @@
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
-                <category android:name="android.intent.category.LAUNCHER" />
+                <action android:name="android.intent.action.SEARCH"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
+            <meta-data
+                android:name="android.app.searchable"
+                android:resource="@xml/search_configuration"/>
         </activity>
     </application>
 
