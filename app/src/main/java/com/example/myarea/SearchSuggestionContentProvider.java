@@ -34,7 +34,11 @@ public class SearchSuggestionContentProvider extends ContentProvider {
         SQLiteDatabase db = dbHandler.getReadableDatabase();
         String query = selectionArgs != null && selectionArgs.length > 0 ? selectionArgs[0] : "";
         return db.query("POIs",
-                new String[]{"id AS _id", "name AS suggest_text_1", "description AS suggest_text_2"},
+                new String[]{
+                        "id AS _id",
+                        "name AS suggest_text_1",
+                        "description AS suggest_text_2",
+                        "id AS suggest_intent_data"},
                 "name LIKE ?",
                 new String[]{"%" + query + "%"},
                 null, null, null);

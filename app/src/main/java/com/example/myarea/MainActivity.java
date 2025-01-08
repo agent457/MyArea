@@ -54,6 +54,20 @@ public class MainActivity extends AppCompatActivity {
                 return true;
             }
         });
+
+    }
+    @Override
+    protected void onNewIntent(Intent intent){
+        super.onNewIntent(intent);
+
+        if (Intent.ACTION_VIEW.equals(intent.getAction())){
+            String id = intent.getDataString();
+            Fragment fragment = getSupportFragmentManager().findFragmentById(R.id.main_fragment);
+
+            if (fragment instanceof MapFragment){
+                ((MapFragment) fragment).handleSuggestionClick(id);
+            }
+        }
     }
     public void init(){
         navbar = findViewById(R.id.navbar);

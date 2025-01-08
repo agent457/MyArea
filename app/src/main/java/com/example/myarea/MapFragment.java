@@ -140,18 +140,15 @@ public class MapFragment extends Fragment {
         });
 
 
-
         return view;
     }
 
-    private void handleIntent(Intent intent) {
-        if (Intent.ACTION_SEARCH.equals(intent.getAction())){
-            String query = intent.getStringExtra(SearchManager.QUERY);
-            doMySearch(query);
-        }
+    void handleSuggestionClick(String id) {
+        Toast.makeText(requireContext(), id, Toast.LENGTH_SHORT).show();
     }
 
-    private void doMySearch(String query) {
+    private void calculatePath(LatLong current, LatLong destination){
+
     }
 
     public void init(View view){
