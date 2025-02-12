@@ -21,6 +21,7 @@ import androidx.core.content.FileProvider;
 import androidx.fragment.app.Fragment;
 
 import android.provider.OpenableColumns;
+import android.provider.Settings;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -29,6 +30,9 @@ import android.widget.SearchView;
 import android.widget.Toast;
 
 import org.mapsforge.core.graphics.Bitmap;
+import org.mapsforge.core.graphics.GraphicFactory;
+import org.mapsforge.core.graphics.Paint;
+import org.mapsforge.core.graphics.Style;
 import org.mapsforge.core.model.LatLong;
 import org.mapsforge.map.android.graphics.AndroidGraphicFactory;
 import org.mapsforge.map.android.util.AndroidUtil;
@@ -36,6 +40,7 @@ import org.mapsforge.map.android.view.MapView;
 import org.mapsforge.map.datastore.MapDataStore;
 import org.mapsforge.map.layer.cache.TileCache;
 import org.mapsforge.map.layer.overlay.Marker;
+import org.mapsforge.map.layer.overlay.Polyline;
 import org.mapsforge.map.layer.renderer.TileRendererLayer;
 import org.mapsforge.map.reader.MapFile;
 import org.mapsforge.map.rendertheme.InternalRenderTheme;
@@ -48,6 +53,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -144,7 +150,27 @@ public class MapFragment extends Fragment {
     }
 
     void handleSuggestionClick(String id) {
-        Toast.makeText(requireContext(), id, Toast.LENGTH_SHORT).show();
+        Toast.makeText(requireContext(),id,Toast.LENGTH_SHORT).show();
+//        db = new DBHandler(requireContext(),"Yoana");
+//        POIs = db.loadDB();
+//        POI end = POIs.get(Integer.parseInt(id));
+//        LatLong llend = new LatLong(end.getLat(),end.getLong());
+//        LatLong llstart = new LatLong(32.20,34.82);
+//        Toast.makeText(requireContext(), id, Toast.LENGTH_SHORT).show();
+//        GHRequest request = new GHRequest(llstart.latitude,llstart.longitude,llend.latitude,llend.longitude);
+//        request.setProfile("Foot");
+//        request.getHints().put(Parameters.Routing.INSTRUCTIONS, "true");
+//        GHResponse response = hopper.route(request);
+//        PointList points = response.getBest().getPoints();
+//        Paint paint = AndroidGraphicFactory.INSTANCE.createPaint();
+//        paint.setColor(1);
+//        paint.setStrokeWidth(4);
+//        paint.setStyle(Style.FILL);
+//        Polyline routePolyLine = new Polyline(paint, AndroidGraphicFactory.INSTANCE);
+//        for(GHPoint point : points){
+//            routePolyLine.getLatLongs().add(new LatLong(point.lat,point.lon));
+//        }
+//        map.getLayerManager().getLayers().add(routePolyLine);
     }
 
     private void calculatePath(LatLong current, LatLong destination){

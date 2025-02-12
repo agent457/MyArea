@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">MyArea</string>
+    <string name="resume">המשך עדכון מיקום</string>
+    <string name="pause">הפסק עדכון מיקום</string>
+    <string name="poi_editor">עורך נ\"צ</string>
+    <string name="name">שם%1$s</string>
+    <string name="description">תיאור%1$s</string>
+    <string name="longitude">אורך גאוגרפי%1$s</string>
+    <string name="latitude">רוחב גאוגרפי%1$s</string>
+    <string name="add_poi">הוסף נ\"צ</string>
+    <string name="title_home">בית</string>
+    <string name="title_notifications">הודעות</string>
+    <string name="delete_by_id_description">מחק נקודת ציון ממאגר הנתונים על-פי ID</string>
+    <string name="current_position">מיקום נוכחי</string>
+    <string name="random_example">חדר 34</string>
+    <string name="settings">הגדרות</string>
+    <string name="app_language">שפה</string>
+    <string name="theme">ערכת נושא</string>
+    <string name="map_settings">הגדרות מפה</string>
+    <string name="messages_header">הודעות</string>
+    <string name="sync_header">סנכרון</string>
+    <string name="signature_title">החתימה שלך</string>
+    <string name="reply_title">פעולת תגובה בסיסית</string>
+    <string name="sync_title">לסנכרן אימייל מעת לעת</string>
+    <string name="attachment_title">להוריד קבצים מצורפים</string>
+    <string name="attachment_summary_on">להוריד קבצים מצורפים אוטומתית</string>
+    <string name="attachment_summary_off">הורד קבצים מצורפים רק כאשר מבוקש</string>
+</resources>

@@ -19,8 +19,8 @@ public class PoiAdapter extends ArrayAdapter<POI> {
 
     public PoiAdapter(@NonNull Context context, ArrayList<POI> a) {
         super(context, R.layout.db_row, a);
-        this.context=context;
-        this.list=a;
+        this.context = context;
+        this.list = a;
     }
 
     @NonNull
@@ -28,18 +28,23 @@ public class PoiAdapter extends ArrayAdapter<POI> {
     public View getView(int position, @Nullable View convertView, @NonNull ViewGroup parent) {
         POI poi = list.get(position);
         if(convertView == null){
-            convertView = LayoutInflater.from(getContext()).inflate(R.layout.db_row,parent,false);
+            convertView = LayoutInflater.from(getContext()).inflate(R.layout.db_row, parent,false);
         }
         TextView name = convertView.findViewById(R.id.lv_name);
         TextView id = convertView.findViewById(R.id.lv_id);
         TextView lon = convertView.findViewById(R.id.lv_long);
         TextView lat = convertView.findViewById(R.id.lv_lat);
         TextView des = convertView.findViewById(R.id.lv_des);
-        name.setText("Name: " + poi.getName());
-        id.setText("ID: " + poi.getId());
-        lon.setText("Longitude: " + poi.getLong());
-        lat.setText("Latitude: " + poi.getLat());
-        des.setText("Description: " + poi.getDescription());
+        String text = context.getString(R.string.name,": "+poi.getName());
+        name.setText(text);
+        text = context.getString(R.string.id,": "+poi.getId());
+        id.setText(text);
+        text = context.getString(R.string.longitude,": "+poi.getLong());
+        lon.setText(text);
+        text = context.getString(R.string.latitude,": "+poi.getLat());
+        lat.setText(text);
+        text = context.getString(R.string.description,": "+poi.getDescription());
+        des.setText(text);
         return convertView;
     }
 }

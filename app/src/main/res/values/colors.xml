@@ -2,4 +2,23 @@
 <resources>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+    <color name="transparent">#00000000</color>
+
+    <!-- !-->
+
+    <color name="LM_background">#FFFFF4CC</color>
+    <color name="LM_colorOnBackground">#FFE88F</color>
+    <color name="LM_colorSecondary">#FFD9EAD3</color>
+    <color name="LM_colorSecondaryVariant">#ADBDA9</color>
+    <color name="LM_colorPrimary">#FFC9DAF8</color>
+    <color name="LM_colorPrimaryVariant">#85ACF0</color>
+
+    <!-- !-->
+
+    <color name="DM_background">#2a2b2f</color>
+    <color name="DM_colorOnBackground">#88b5f8</color>
+    <color name="DM_colorPrimary">#192022</color>
+    <color name="DM_colorPrimaryVariant">#31353a</color>
+    <color name="DM_colorSecondary">#59b8ca</color>
+    <color name="DM_colorSecondaryVariant">#00363f</color>
 </resources>

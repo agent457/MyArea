@@ -9,6 +9,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -25,7 +26,8 @@ import java.util.ArrayList;
 public class EditorFragment extends Fragment {
 
     private EditText editName, editDes, editLon, editLat, searchID;
-    private Button addPOI, deleteID;
+    private Button addPOI, current;
+    private ImageButton deleteID;
     private TextView title;
     private ListView listView;
     private DBHandler db;
@@ -111,9 +113,22 @@ public class EditorFragment extends Fragment {
         editLat = view.findViewById(R.id.editLat);
         searchID = view.findViewById(R.id.list);
         addPOI = view.findViewById(R.id.addPOI);
+        current = view.findViewById(R.id.current);
         deleteID = view.findViewById(R.id.deleteID);
         title = view.findViewById(R.id.title);
         listView = view.findViewById(R.id.scroll);
+
+        String text = getString(R.string.name,"");
+        editName.setHint(text);
+        text = getString(R.string.id,"");
+        searchID.setHint(text);
+        text = getString(R.string.longitude,"");
+        editLon.setHint(text);
+        text = getString(R.string.latitude,"");
+        editLat.setHint(text);
+        text = getString(R.string.description,"");
+        editDes.setHint(text);
+
         db = new DBHandler(requireContext(), "Yoana");
         POIs = db.loadDB();
         adapter = new PoiAdapter(requireContext(), POIs);

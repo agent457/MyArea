@@ -3,6 +3,14 @@
     <style name="Base.Theme.MyArea" parent="Theme.Material3.DayNight.NoActionBar">
         <!-- Customize your light theme here. -->
         <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
+
+        <item name="background">@color/LM_background</item>
+        <item name="colorOnBackground">@color/LM_colorOnBackground</item>
+        <item name="colorPrimary">@color/LM_colorPrimary</item>
+        <item name="colorPrimaryVariant">@color/LM_colorPrimaryVariant</item>
+        <item name="colorSecondary">@color/LM_colorSecondary</item>
+        <item name="colorSecondaryVariant">@color/LM_colorSecondaryVariant</item>
+
     </style>
 
     <style name="Theme.MyArea" parent="Base.Theme.MyArea" />

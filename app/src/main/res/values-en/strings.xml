@@ -1,27 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Base Values -->
     <string name="app_name">MyArea</string>
     <string name="resume">Resume Location Updates</string>
     <string name="pause">Pause Location Updates</string>
-    <string name="title_activity_map_view" translatable="false">MapView</string>
-    <string name="title_home">Home</string>
-    <string name="title_dashboard" translatable="false">Dashboard</string>
-    <string name="title_notifications">Notifications</string>
-
-    <!-- Main Activity -->
-
-    <!-- Map Fragment -->
-
-    <!-- Coordinates Fragment -->
-
-    <!-- Editor Fragment -->
     <string name="poi_editor">POI Editor</string>
     <string name="name">Name%1$s</string>
     <string name="description">Description%1$s</string>
     <string name="longitude">Longitude%1$s</string>
     <string name="latitude">Latitude%1$s</string>
     <string name="add_poi">Add POI</string>
-    <string name="id" translatable="false">ID%1$s</string>
+    <string name="title_home">Home</string>
+    <string name="title_notifications">Notifications</string>
     <string name="delete_by_id_description">Delete POI from database by ID</string>
     <string name="current_position">Current Position</string>
     <string name="random_example">Room 34</string>
@@ -29,19 +18,12 @@
     <string name="app_language">App Language</string>
     <string name="theme">Theme</string>
     <string name="map_settings">Map Settings</string>
-    <!-- Preference Titles -->
     <string name="messages_header">Messages</string>
     <string name="sync_header">Sync</string>
-
-    <!-- Messages Preferences -->
     <string name="signature_title">Your signature</string>
     <string name="reply_title">Default reply action</string>
-
-    <!-- Sync Preferences -->
     <string name="sync_title">Sync email periodically</string>
     <string name="attachment_title">Download incoming attachments</string>
-    <string name="attachment_summary_on">Automatically download attachments for incoming emails
-    </string>
+    <string name="attachment_summary_on">Automatically download attachments for incoming emails</string>
     <string name="attachment_summary_off">Only download attachments when manually requested</string>
-
 </resources>
