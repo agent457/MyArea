@@ -196,7 +196,7 @@ public class MapFragment extends Fragment {
                         "&point="+ current.latitude +"," +
                         current.longitude+
                         "&profile=foot&points_encoded=false" +
-                        "&key=b31cd78d-aa5d-44e6-9477-c982552f829a";
+                        "&key="+getString(R.string.GH_APIKEY);
                 // String url = "https://graphhopper.com/api/1/route?point=31.942040,34.824726&point=31.942102,34.823823&profile=foot&points_encoded=false&key=b31cd78d-aa5d-44e6-9477-c982552f829a";
 
                 Request request = new Request.Builder()
