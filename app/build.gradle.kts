@@ -59,4 +59,6 @@ dependencies {
     implementation ("com.github.mapsforge.mapsforge:mapsforge-core:0.21.0")
     implementation ("com.github.mapsforge.mapsforge:mapsforge-poi:0.21.0")
     implementation ("com.github.mapsforge.mapsforge:mapsforge-poi-android:0.21.0")
+    // OkHttp
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
 }

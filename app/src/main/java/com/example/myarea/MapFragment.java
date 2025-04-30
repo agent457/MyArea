@@ -3,7 +3,6 @@ package com.example.myarea;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.SearchManager;
-import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -13,6 +12,9 @@ import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Bundle;
+import android.Manifest;
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationServices;
 
 import androidx.annotation.Nullable;
 import androidx.core.app.ActivityCompat;
@@ -21,7 +23,6 @@ import androidx.core.content.FileProvider;
 import androidx.fragment.app.Fragment;
 
 import android.provider.OpenableColumns;
-import android.provider.Settings;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -30,7 +31,6 @@ import android.widget.SearchView;
 import android.widget.Toast;
 
 import org.mapsforge.core.graphics.Bitmap;
-import org.mapsforge.core.graphics.GraphicFactory;
 import org.mapsforge.core.graphics.Paint;
 import org.mapsforge.core.graphics.Style;
 import org.mapsforge.core.model.LatLong;
@@ -47,14 +47,17 @@ import org.mapsforge.map.rendertheme.InternalRenderTheme;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
 
 /**
  * A simple {@link Fragment} subclass.
@@ -65,7 +68,6 @@ public class MapFragment extends Fragment {
 
     private static final int SELECT_MAP_FILE = 0;
     private MapView map;
-    private DBHandler db;
     private ArrayList<POI> POIs;
     private SearchView searchView;
 
@@ -150,36 +152,111 @@ public class MapFragment extends Fragment {
     }
 
     void handleSuggestionClick(String id) {
-        Toast.makeText(requireContext(),id,Toast.LENGTH_SHORT).show();
-//        db = new DBHandler(requireContext(),"Yoana");
-//        POIs = db.loadDB();
-//        POI end = POIs.get(Integer.parseInt(id));
-//        LatLong llend = new LatLong(end.getLat(),end.getLong());
-//        LatLong llstart = new LatLong(32.20,34.82);
-//        Toast.makeText(requireContext(), id, Toast.LENGTH_SHORT).show();
-//        GHRequest request = new GHRequest(llstart.latitude,llstart.longitude,llend.latitude,llend.longitude);
-//        request.setProfile("Foot");
-//        request.getHints().put(Parameters.Routing.INSTRUCTIONS, "true");
-//        GHResponse response = hopper.route(request);
-//        PointList points = response.getBest().getPoints();
-//        Paint paint = AndroidGraphicFactory.INSTANCE.createPaint();
-//        paint.setColor(1);
-//        paint.setStrokeWidth(4);
-//        paint.setStyle(Style.FILL);
-//        Polyline routePolyLine = new Polyline(paint, AndroidGraphicFactory.INSTANCE);
-//        for(GHPoint point : points){
-//            routePolyLine.getLatLongs().add(new LatLong(point.lat,point.lon));
-//        }
-//        map.getLayerManager().getLayers().add(routePolyLine);
+        // Find the POI with the given ID
+        POI selectedPOI = POIs.stream().filter(poi -> String.valueOf(poi.getId()).equals(id)).findFirst().orElse(null);
+
+        if (selectedPOI != null) {
+            // Get current location from GPS
+            FusedLocationProviderClient fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireContext());
+            if (ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+                fusedLocationClient.getLastLocation()
+                        .addOnSuccessListener(requireActivity(), location -> {
+                            if (location != null) {
+                                // Set destination to selected POI
+                                LatLong destination = new LatLong(selectedPOI.getLat(), selectedPOI.getLong());
+
+                                // Set current location
+                                LatLong current = new LatLong(location.getLatitude(), location.getLongitude());
+
+                                // Calculate and display path
+                                calculatePath(current, destination);
+                            } else {
+                                Toast.makeText(requireContext(), "Unable to get current location", Toast.LENGTH_SHORT).show();
+                            }
+                        });
+            } else {
+                Toast.makeText(requireContext(), "Location permission not granted", Toast.LENGTH_SHORT).show();
+            }
+        } else {
+            Toast.makeText(requireContext(), "POI not found", Toast.LENGTH_SHORT).show();
+        }
     }
 
-    private void calculatePath(LatLong current, LatLong destination){
+    private void calculatePath(LatLong current, LatLong destination) {
 
+        new Thread(() -> {
+            try {
+                OkHttpClient client = new OkHttpClient();
+                String apiKey = getString(R.string.GH_APIKEY);
+                
+                // Create the URL with the coordinates and API key
+                String url = "https://graphhopper.com/api/1/route?" +
+                        "point="+ destination.latitude +"," +
+                        destination.longitude +
+                        "&point="+ current.latitude +"," +
+                        current.longitude+
+                        "&profile=foot&points_encoded=false" +
+                        "&key=b31cd78d-aa5d-44e6-9477-c982552f829a";
+                // String url = "https://graphhopper.com/api/1/route?point=31.942040,34.824726&point=31.942102,34.823823&profile=foot&points_encoded=false&key=b31cd78d-aa5d-44e6-9477-c982552f829a";
+
+                Request request = new Request.Builder()
+                        .url(url)
+                        .get()
+                        .build();
+
+                Response response = client.newCall(request).execute();
+                if (!response.isSuccessful()) {
+                    requireActivity().runOnUiThread(() -> 
+                        Toast.makeText(requireContext(), "Error: " + response.code(), Toast.LENGTH_LONG).show()
+                    );
+                    return;
+                }
+
+                String responseData = response.body().string();
+                JSONObject jsonResponse = new JSONObject(responseData);
+                JSONArray paths = jsonResponse.getJSONArray("paths");
+                if (paths.length() == 0) {
+                    requireActivity().runOnUiThread(() -> 
+                        Toast.makeText(requireContext(), "No path found", Toast.LENGTH_LONG).show()
+                    );
+                    return;
+                }
+
+                JSONObject path = paths.getJSONObject(0);
+                JSONArray points = path.getJSONObject("points").getJSONArray("coordinates");
+
+                // Create paint for the polyline
+                Paint paint = AndroidGraphicFactory.INSTANCE.createPaint();
+                paint.setColor(AndroidGraphicFactory.INSTANCE.createColor(255, 0, 0, 255)); // Blue color
+                paint.setStrokeWidth(10);
+                paint.setStyle(Style.STROKE);
+
+                // Create and add polyline to map
+                Polyline routePolyLine = new Polyline(paint, AndroidGraphicFactory.INSTANCE);
+                for (int i = 0; i < points.length(); i++) {
+                    JSONArray point = points.getJSONArray(i);
+                    double lon = point.getDouble(0);
+                    double lat = point.getDouble(1);
+                    routePolyLine.getLatLongs().add(new LatLong(lat, lon));
+                }
+
+                requireActivity().runOnUiThread(() -> {
+                    map.getLayerManager().getLayers().add(routePolyLine);
+                    map.getLayerManager().redrawLayers();
+                });
+
+            } catch (Exception e) {
+                e.printStackTrace();
+                requireActivity().runOnUiThread(() -> 
+                    Toast.makeText(requireContext(), "Error: " + e.getMessage(), Toast.LENGTH_LONG).show()
+                );
+            }
+        }).start();
     }
 
     public void init(View view){
         map = view.findViewById(R.id.map);
-        db = new DBHandler(requireContext(),"Yoana");
+        DBHandler db = new DBHandler(requireContext(), "Yoana");
         POIs = db.loadDB();
         searchView = view.findViewById(R.id.search);
     }
@@ -274,7 +351,7 @@ public class MapFragment extends Fragment {
         super.onDestroy();
     }
     public void loadPOIs(){
-        Drawable drawableU = ContextCompat.getDrawable(requireContext(),R.drawable.poi);
+        Drawable drawableU = ContextCompat.getDrawable(requireContext(),R.drawable.current_location);
         assert drawableU != null;
         android.graphics.Bitmap bitmapU = ((BitmapDrawable)drawableU).getBitmap();
         Drawable drawableC = new BitmapDrawable(getResources(), android.graphics.Bitmap.createScaledBitmap(bitmapU,50,50,true));
