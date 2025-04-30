@@ -351,7 +351,7 @@ public class MapFragment extends Fragment {
         super.onDestroy();
     }
     public void loadPOIs(){
-        Drawable drawableU = ContextCompat.getDrawable(requireContext(),R.drawable.current_location);
+        Drawable drawableU = ContextCompat.getDrawable(requireContext(),R.drawable.poi);
         assert drawableU != null;
         android.graphics.Bitmap bitmapU = ((BitmapDrawable)drawableU).getBitmap();
         Drawable drawableC = new BitmapDrawable(getResources(), android.graphics.Bitmap.createScaledBitmap(bitmapU,50,50,true));
