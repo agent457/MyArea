@@ -10,12 +10,18 @@ import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
+import android.location.Location;
 import android.net.Uri;
 import android.os.Bundle;
 import android.Manifest;
 import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationCallback;
+import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.location.Priority;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -67,6 +73,10 @@ import okhttp3.Response;
 public class MapFragment extends Fragment {
 
     private static final int SELECT_MAP_FILE = 0;
+    public static final int PERMISSIONS_FINE_LOCATION = 99;
+    FusedLocationProviderClient fusedLocationProviderClient;
+    LocationRequest locationRequest;
+    LocationCallback locationCallBack;
     private MapView map;
     private ArrayList<POI> POIs;
     private SearchView searchView;
@@ -147,6 +157,21 @@ public class MapFragment extends Fragment {
             }
         });
 
+        locationRequest = new LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 100)
+                .setWaitForAccurateLocation(false)
+                .setMinUpdateIntervalMillis(2000)
+                .setMaxUpdateDelayMillis(100)
+                .build();
+        locationCallBack = new LocationCallback() {
+            @Override
+            public void onLocationResult(@NonNull LocationResult locationResult) {
+                super.onLocationResult(locationResult);
+                updateMap(locationResult.getLastLocation());
+            }
+        };
+
+        updateGPS();
+        StartLocationUpdates();
 
         return view;
     }
@@ -157,9 +182,8 @@ public class MapFragment extends Fragment {
 
         if (selectedPOI != null) {
             // Get current location from GPS
-            FusedLocationProviderClient fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireContext());
             if (ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-                fusedLocationClient.getLastLocation()
+                fusedLocationProviderClient.getLastLocation()
                         .addOnSuccessListener(requireActivity(), location -> {
                             if (location != null) {
                                 // Set destination to selected POI
@@ -197,7 +221,6 @@ public class MapFragment extends Fragment {
                         current.longitude+
                         "&profile=foot&points_encoded=false" +
                         "&key="+getString(R.string.GH_APIKEY);
-                // String url = "https://graphhopper.com/api/1/route?point=31.942040,34.824726&point=31.942102,34.823823&profile=foot&points_encoded=false&key=b31cd78d-aa5d-44e6-9477-c982552f829a";
 
                 Request request = new Request.Builder()
                         .url(url)
@@ -209,6 +232,7 @@ public class MapFragment extends Fragment {
                     requireActivity().runOnUiThread(() -> 
                         Toast.makeText(requireContext(), "Error: " + response.code(), Toast.LENGTH_LONG).show()
                     );
+                    Log.e("GraphHopper",response.message());
                     return;
                 }
 
@@ -255,8 +279,9 @@ public class MapFragment extends Fragment {
     }
 
     public void init(View view){
+        SharedPreferences sharedPreferences = requireContext().getSharedPreferences("MapPreferences", Context.MODE_PRIVATE);
         map = view.findViewById(R.id.map);
-        DBHandler db = new DBHandler(requireContext(), "Yoana");
+        DBHandler db = new DBHandler(requireContext(),sharedPreferences.getString("chosenDB","new DB"));
         POIs = db.loadDB();
         searchView = view.findViewById(R.id.search);
     }
@@ -407,10 +432,38 @@ public class MapFragment extends Fragment {
 
         return fileName;
     }
-    private void clearSavedMapUri(){
-        SharedPreferences sharedPreferences = requireContext().getSharedPreferences("MapPreferences", Context.MODE_PRIVATE);
-        SharedPreferences.Editor editor = sharedPreferences.edit();
-        editor.remove("selected_map_file");
-        editor.apply();
+
+    private void updateGPS() {
+        fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(requireContext());
+        if(ActivityCompat.checkSelfPermission(requireContext(), android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED){
+            fusedLocationProviderClient.getLastLocation().addOnSuccessListener(requireActivity(), this::updateMap);
+        }
+        else{
+            requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, PERMISSIONS_FINE_LOCATION);
+        }
+    }
+
+    private void updateMap(Location location) {
+
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+
+        if (requestCode == PERMISSIONS_FINE_LOCATION) {
+            if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                updateGPS();
+            } else {
+                Toast.makeText(requireContext(), "This app requires permission to be granted in order to work properly", Toast.LENGTH_SHORT).show();
+
+            }
+        }
+    }
+
+    @SuppressLint("MissingPermission")
+    private void StartLocationUpdates() {
+        fusedLocationProviderClient.requestLocationUpdates(locationRequest,locationCallBack,null);
+        updateGPS();
     }
 }

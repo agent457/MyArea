@@ -7,6 +7,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.widget.ArrayAdapter;
 
+import java.io.File;
 import java.util.ArrayList;
 
 public class DBHandler extends SQLiteOpenHelper {
@@ -124,5 +125,9 @@ public class DBHandler extends SQLiteOpenHelper {
     }
     public String getLONG_COL() {
         return LONG_COL;
+    }
+
+    public void setDB_NAME(String newName) {
+        this.DB_NAME = newName;
     }
 }

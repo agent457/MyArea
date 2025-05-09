@@ -3,6 +3,8 @@ package com.example.myarea;
 import android.app.SearchManager;
 import android.content.ContentProvider;
 import android.content.ContentValues;
+import android.content.Context;
+import android.content.SharedPreferences;
 import android.content.UriMatcher;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
@@ -30,7 +32,8 @@ public class SearchSuggestionContentProvider extends ContentProvider {
     @Nullable
     @Override
     public Cursor query(@NonNull Uri uri, @Nullable String[] projection, @Nullable String selection, @Nullable String[] selectionArgs, @Nullable String sortOrder) {
-        DBHandler dbHandler = new DBHandler(requireContext(), "Yoana");
+        SharedPreferences sharedPreferences = requireContext().getSharedPreferences("MapPreferences", Context.MODE_PRIVATE);
+        DBHandler dbHandler = new DBHandler(requireContext(), sharedPreferences.getString("chosenDB","new DB") );
         SQLiteDatabase db = dbHandler.getReadableDatabase();
         String query = selectionArgs != null && selectionArgs.length > 0 ? selectionArgs[0] : "";
         return db.query("POIs",

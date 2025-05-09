@@ -43,5 +43,8 @@
     <string name="attachment_summary_on">Automatically download attachments for incoming emails
     </string>
     <string name="attachment_summary_off">Only download attachments when manually requested</string>
+    <string name="select_poi_database">Select POI Database</string>
+    <string name="make_a_new_database">Make a new database</string>
+    <string name="rename_current_database">Rename Current Database</string>
 
 </resources>
