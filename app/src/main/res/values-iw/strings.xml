@@ -26,4 +26,7 @@
     <string name="attachment_title">להוריד קבצים מצורפים</string>
     <string name="attachment_summary_on">להוריד קבצים מצורפים אוטומתית</string>
     <string name="attachment_summary_off">הורד קבצים מצורפים רק כאשר מבוקש</string>
+    <string name="select_poi_database">בחר בסיס נתונים</string>
+    <string name="make_a_new_database">צור בסיס נתונים חדש</string>
+    <string name="rename_current_database">שנה את שם בסיס הנתונים הנוחכי</string>
 </resources>
