@@ -17,7 +17,7 @@ import androidx.fragment.app.Fragment;
 public class MainActivity extends AppCompatActivity {
 
     Toolbar toolbar;
-    Fragment MapFragment, CoordinatesFragment, EditorFragment, SettingsFragment;
+    Fragment MapFragment, EditorFragment, SettingsFragment;
 
 
     @Override
@@ -70,7 +70,6 @@ public class MainActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
         toolbar.showOverflowMenu();
         MapFragment = new MapFragment();
-        CoordinatesFragment = new CoordinatesFragment();
         EditorFragment = new EditorFragment();
         SettingsFragment = new SettingsFragment();
         getSupportFragmentManager().beginTransaction().replace(R.id.main_fragment, MapFragment).commit();
