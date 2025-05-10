@@ -126,8 +126,4 @@ public class DBHandler extends SQLiteOpenHelper {
     public String getLONG_COL() {
         return LONG_COL;
     }
-
-    public void setDB_NAME(String newName) {
-        this.DB_NAME = newName;
-    }
 }

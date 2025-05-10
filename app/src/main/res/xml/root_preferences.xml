@@ -1,0 +1,15 @@
+<PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <PreferenceCategory android:title="Settings">
+        <EditTextPreference
+            android:key="GH_APIKEY"
+            android:summary="Set you GraphHopper API key"
+            android:title="GraphHopper API key" />
+
+        <Preference
+            android:key="Chosen_Map"
+            android:persistent="false"
+            android:title="Choose the File of your Map" />
+    </PreferenceCategory>
+</PreferenceScreen>

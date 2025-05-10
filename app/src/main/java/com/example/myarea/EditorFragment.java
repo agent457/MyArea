@@ -43,11 +43,11 @@ public class EditorFragment extends Fragment {
     private Button addPOI, current;
     private ImageButton newDB;
     private AutoCompleteTextView autoCompleteTextView;
-    ArrayAdapter<String> adapterItems;
+    private ArrayAdapter<String> adapterItems;
     private ListView listView;
     private DBHandler db;
     private ArrayList<POI> POIs;
-    PoiAdapter adapter;
+    private PoiAdapter adapter;
 
     // TODO: Rename parameter arguments, choose names that match
     // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER

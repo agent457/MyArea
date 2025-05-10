@@ -22,15 +22,6 @@
         android:id="@+id/main_fragment"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="13"/>
-
-    <com.google.android.material.bottomnavigation.BottomNavigationView
-        android:id="@+id/navbar"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:background="?attr/background"
-        app:menu="@menu/bottom_navbar"
-        app:itemIconSize="0dp"/>
+        android:layout_weight="14"/>
 
 </LinearLayout>

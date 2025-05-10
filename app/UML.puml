@@ -1,0 +1,156 @@
+@startuml
+!pragma layout smetana
+
+' Package declaration
+package "com.example.myarea" {
+  ' Main Activity
+  class MainActivity {
+    - Toolbar toolbar
+    - Fragment MapFragment
+    - Fragment EditorFragment
+    - Fragment SettingsFragment
+    + onCreate(Bundle)
+    + onCreateOptionsMenu(Menu)
+    + onOptionsItemSelected(MenuItem)
+    + onNewIntent(Intent)
+    + init()
+  }
+
+  ' Data Model
+  class POI {
+    - int id
+    - String name
+    - String description
+    - double Long
+    - double Lat
+    + POI(int, String, String, double, double)
+    + getId(): int
+    + getName(): String
+    + getDescription(): String
+    + getLong(): double
+    + getLat(): double
+    + compareTo(Object): int
+  }
+
+  ' Database Layer
+  class DBHandler {
+    - String DB_NAME
+    - static final int DB_VERSION
+    - String POIs
+    - String ID_COL
+    - String NAME_COL
+    - String DESCRIPTION_COL
+    - String LONG_COL
+    - String LAT_COL
+    + DBHandler(Context, String)
+    + onCreate(SQLiteDatabase)
+    + onUpgrade(SQLiteDatabase, int, int)
+    + addPOI(String, String, double, double)
+    + deletePOI(int)
+    + loadDB(): ArrayList<POI>
+    + getLast(): POI
+  }
+
+  ' UI Components
+  package "Fragments" {
+    class MapFragment {
+      - int SELECT_MAP_FILE
+      - int PERMISSIONS_FINE_LOCATION
+      - MyLocationOverlay myLocationOverlay
+      - FusedLocationProviderClient fusedLocationProviderClient
+      - LocationRequest locationRequest
+      - LocationCallback locationCallBack
+      - SharedPreferences sharedPreferences
+      - SharedPreferences defaultPreferences
+      - MapView map
+      - ArrayList<POI> POIs
+      - searchView searchView
+      - Context context
+
+
+      + init(View)
+      + onCreate(Bundle)
+      + onCreateView(LayoutInflater, ViewGroup, Bundle)
+      + handleSuggestionClick(String)
+      + calculatePath(LatLong, LatLong)
+      + onActivityResult(int, int, Intent)
+      + openMap(Uri)
+      + onDestroy()
+      + loadPOIs()
+      + saveFileFromUri(Uri, String)
+      + getFileNameFromUri(Uri)
+      + updateGPS()
+      + updateMap(Location)
+      + getPaint(int, int, Style)
+      + onRequestPermissionResult(int, String[], int[])
+      + startLocationUpdates()
+      + onLocationChanged(Location)
+    }
+
+    class EditorFragment {
+      - EditText editName
+      - EditText editDes
+      - EditText editLon
+      - EditText editLat
+      - EditText rename
+      - Button addPOI
+      - Button current
+      - ImageButton newDB
+      - AutoCompleteTextView autoCompleteTextView
+      - ArrayAdapter<String> adapterItems
+      - ListView listView
+      - DBHandler db
+      - ArrayList<POI> POIs
+      - PoiAdapter adapter
+
+      + onCreate(Bundle)
+      + onCreateView(LayoutInflater, ViewGroup, Bundle)
+      + init()
+      + renameDatabase(String, (String)
+    }
+
+    class SettingsFragment {
+      - int SELECT_MAP_FILE
+      - SharedPreferences sharedPreferences
+      - EditTextPreference apiKeyPreference
+      - Preference mapFilePreference
+
+      + onCreate(Bundle)
+      + onCreateView(LayoutInflater, ViewGroup, Bundle)
+      + pickMapFile()
+      + loadSettings()
+      + init()
+    }
+  }
+
+  ' Adapters and Providers
+  class PoiAdapter {
+    + Context context
+    + ArrayList<POI> list
+
+    + PoiAdapter(Context, ArrayList<POI>)
+    + getView(int, View, ViewGroup)
+  }
+
+  class SearchSuggestionContentProvider {
+    + query(Uri, String[], String, String[], string)
+    + getType(Uri)
+    + insert(Uri, ContentValues)
+    + delete(Uri, String, String[])
+    + update(Uri, ContentValues, String, String[])
+  }
+}
+
+' Relationships
+MainActivity --> MapFragment : contains
+MainActivity --> EditorFragment : contains
+MainActivity --> SettingsFragment : contains
+
+DBHandler --> POI : manages >
+PoiAdapter --> POI : adapts >
+SearchSuggestionContentProvider --> POI : provides >
+
+MapFragment --> DBHandler : queries >
+EditorFragment --> DBHandler : modifies >
+
+@enduml

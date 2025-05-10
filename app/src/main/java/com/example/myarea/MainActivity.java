@@ -1,33 +1,22 @@
 package com.example.myarea;
 
-import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.View;
 
 import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
-import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.fragment.app.Fragment;
-import androidx.fragment.app.FragmentTransaction;
-
-import com.google.android.material.bottomnavigation.BottomNavigationView;
-import com.google.android.material.navigation.NavigationBarView;
-
-import java.util.zip.Inflater;
 
 public class MainActivity extends AppCompatActivity {
 
     Toolbar toolbar;
-    BottomNavigationView navbar;
     Fragment MapFragment, CoordinatesFragment, EditorFragment, SettingsFragment;
 
 
@@ -42,21 +31,8 @@ public class MainActivity extends AppCompatActivity {
             return insets;
         });
         init();
-        navbar.setOnItemSelectedListener(new NavigationBarView.OnItemSelectedListener() {
-            @Override
-            public boolean onNavigationItemSelected(@NonNull MenuItem item) {
-                if (item.getItemId()==R.id.map){
-                    getSupportFragmentManager().beginTransaction().replace(R.id.main_fragment, MapFragment).commit();
-                }
-                if (item.getItemId()==R.id.coordinates){
-                    // temporary, this fragment is for debugging purposes only
-                    getSupportFragmentManager().beginTransaction().replace(R.id.main_fragment, CoordinatesFragment).commit();
-                }
-                return true;
-            }
-        });
-
     }
+
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -93,10 +69,10 @@ public class MainActivity extends AppCompatActivity {
         toolbar = findViewById(R.id.my_toolbar);
         setSupportActionBar(toolbar);
         toolbar.showOverflowMenu();
-        navbar = findViewById(R.id.navbar);
         MapFragment = new MapFragment();
         CoordinatesFragment = new CoordinatesFragment();
         EditorFragment = new EditorFragment();
+        SettingsFragment = new SettingsFragment();
         getSupportFragmentManager().beginTransaction().replace(R.id.main_fragment, MapFragment).commit();
     }
 }
