@@ -46,6 +46,5 @@
     <string name="select_poi_database">Select POI Database</string>
     <string name="make_a_new_database">Make a new database</string>
     <string name="rename_current_database">Rename Current Database</string>
-    <!-- TODO: Remove or change this placeholder text -->
 
 </resources>
