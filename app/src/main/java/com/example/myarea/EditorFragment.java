@@ -212,6 +212,8 @@ public class EditorFragment extends Fragment {
         editLon.setHint(text);
         text = getString(R.string.latitude,"");
         editLat.setHint(text);
+        text = getString(R.string.description,"");
+        editDes.setHint(text);
 
 
         db = new DBHandler(requireContext(), DB_Name);

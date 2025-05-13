@@ -1,9 +1,13 @@
 package com.example.myarea;
 
+import android.annotation.SuppressLint;
+import android.app.ListFragment;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.window.OnBackInvokedDispatcher;
 
 import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
@@ -13,6 +17,9 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.fragment.app.Fragment;
+
+import java.util.List;
+import java.util.Objects;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -31,6 +38,17 @@ public class MainActivity extends AppCompatActivity {
             return insets;
         });
         init();
+        toolbar.setNavigationOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                getSupportFragmentManager().popBackStackImmediate();
+                Fragment fragment = getSupportFragmentManager().findFragmentByTag("Main Fragment");
+                if(fragment != null && fragment.isVisible()){
+                    Objects.requireNonNull(getSupportActionBar()).setDisplayShowHomeEnabled(false);
+                    getSupportActionBar().setDisplayHomeAsUpEnabled(false);
+                }
+            }
+        });
     }
 
 
@@ -40,13 +58,20 @@ public class MainActivity extends AppCompatActivity {
         return true;
     }
 
+    @SuppressLint("UseCompatLoadingForDrawables")
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         if (item.getItemId() == R.id.editor) {
-            getSupportFragmentManager().beginTransaction().replace(R.id.main_fragment, EditorFragment).commit();
+            getSupportFragmentManager().beginTransaction().replace(R.id.main_fragment,EditorFragment).addToBackStack(null).commit();
+            toolbar.setNavigationIcon(getResources().getDrawable(R.drawable.back));
+            Objects.requireNonNull(getSupportActionBar()).setDisplayShowHomeEnabled(true);
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         }
         if (item.getItemId() == R.id.settings){
-            getSupportFragmentManager().beginTransaction().replace(R.id.main_fragment, SettingsFragment).commit();
+            getSupportFragmentManager().beginTransaction().replace(R.id.main_fragment, SettingsFragment).addToBackStack(null).commit();
+            toolbar.setNavigationIcon(getResources().getDrawable(R.drawable.back));
+            Objects.requireNonNull(getSupportActionBar()).setDisplayShowHomeEnabled(true);
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         }
         return true;
     }
@@ -65,6 +90,19 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    @NonNull
+    @Override
+    public OnBackInvokedDispatcher getOnBackInvokedDispatcher() {
+        Fragment fragment = getSupportFragmentManager().findFragmentByTag("Main Fragment");
+        if(fragment != null && fragment.isVisible()){
+            getSupportFragmentManager().popBackStackImmediate();
+            Objects.requireNonNull(getSupportActionBar()).setDisplayShowHomeEnabled(false);
+            getSupportActionBar().setDisplayHomeAsUpEnabled(false);
+        }
+        return super.getOnBackInvokedDispatcher();
+
+    }
+
     public void init(){
         toolbar = findViewById(R.id.my_toolbar);
         setSupportActionBar(toolbar);
@@ -72,6 +110,7 @@ public class MainActivity extends AppCompatActivity {
         MapFragment = new MapFragment();
         EditorFragment = new EditorFragment();
         SettingsFragment = new SettingsFragment();
-        getSupportFragmentManager().beginTransaction().replace(R.id.main_fragment, MapFragment).commit();
+        getSupportFragmentManager().beginTransaction().replace(R.id.main_fragment, MapFragment, "Main Fragment").commit();
     }
+
 }

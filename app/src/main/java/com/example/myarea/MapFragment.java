@@ -15,11 +15,11 @@ import android.os.Bundle;
 import android.Manifest;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationCallback;
-import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.location.Priority;
+import com.google.android.gms.tasks.OnFailureListener;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -74,7 +74,7 @@ import okhttp3.Response;
  * Use the {@link MapFragment#newInstance} factory method to
  * create an instance of this fragment.
  */
-public class MapFragment extends Fragment implements LocationListener {
+public class MapFragment extends Fragment {
 
     private static final int SELECT_MAP_FILE = 0;
     public static final int PERMISSIONS_FINE_LOCATION = 99;
@@ -164,19 +164,6 @@ public class MapFragment extends Fragment implements LocationListener {
                 return false;
             }
         });
-
-        locationRequest = new LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 100)
-                .setWaitForAccurateLocation(false)
-                .setMinUpdateIntervalMillis(2000)
-                .setMaxUpdateDelayMillis(100)
-                .build();
-        locationCallBack = new LocationCallback() {
-            @Override
-            public void onLocationResult(@NonNull LocationResult locationResult) {
-                super.onLocationResult(locationResult);
-                updateMap(locationResult.getLastLocation());
-            }
-        };
 
         StartLocationUpdates();
 
@@ -295,6 +282,21 @@ public class MapFragment extends Fragment implements LocationListener {
         DBHandler db = new DBHandler(context,sharedPreferences.getString("chosenDB","new DB"));
         POIs = db.loadDB();
         searchView = view.findViewById(R.id.search);
+        locationRequest = new LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 100)
+                .setWaitForAccurateLocation(false)
+                .setMinUpdateIntervalMillis(2000)
+                .setMaxUpdateDelayMillis(100)
+                .build();
+        locationCallBack = new LocationCallback() {
+            @Override
+            public void onLocationResult(@NonNull LocationResult locationResult) {
+                super.onLocationResult(locationResult);
+                updateMap(locationResult.getLastLocation());
+            }
+        };
+        Bitmap bitmap = new AndroidBitmap(BitmapFactory.decodeResource(getResources(), R.drawable.ic_maps_indicator_current_position));
+        Marker marker = new Marker(null, bitmap, 0, 0);
+        myLocationOverlay = new MyLocationOverlay(marker);
         updateGPS();
     }
     @Override
@@ -380,9 +382,13 @@ public class MapFragment extends Fragment implements LocationListener {
 
                             } else {
                                 Toast.makeText(context, "Unable to get current location", Toast.LENGTH_SHORT).show();
-                                Bitmap bitmap = new AndroidBitmap(BitmapFactory.decodeResource(getResources(), R.drawable.ic_maps_indicator_current_position));
-                                Marker marker = new Marker(null, bitmap, 0, 0);
-                                myLocationOverlay = new MyLocationOverlay(marker);
+                                map.getLayerManager().getLayers().add(myLocationOverlay);
+                            }
+                        })
+                        .addOnFailureListener(requireActivity(), new OnFailureListener() {
+                            @Override
+                            public void onFailure(@NonNull Exception e) {
+                                Toast.makeText(context, "Unable to get current location", Toast.LENGTH_SHORT).show();
                                 map.getLayerManager().getLayers().add(myLocationOverlay);
                             }
                         });
@@ -479,6 +485,7 @@ public class MapFragment extends Fragment implements LocationListener {
     }
 
     private void updateMap(Location location) {
+        myLocationOverlay.setPosition(location.getLatitude(), location.getLongitude(), location.getAccuracy());
     }
 
     private static Paint getPaint(int color, int strokeWidth, Style style) {
@@ -507,14 +514,6 @@ public class MapFragment extends Fragment implements LocationListener {
     private void StartLocationUpdates() {
         fusedLocationProviderClient.requestLocationUpdates(locationRequest,locationCallBack,null);
         updateGPS();
-    }
-
-
-    @Override
-    public void onLocationChanged(@NonNull Location location) {
-        myLocationOverlay.setPosition(location.getLatitude(), location.getLongitude(), location.getAccuracy());
-
-        map.setCenter(new LatLong(location.getLatitude(),location.getLongitude()));
     }
 
 }

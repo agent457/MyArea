@@ -145,11 +145,13 @@ package "com.example.myarea" {
 MainActivity --> MapFragment : contains
 MainActivity --> EditorFragment : contains
 MainActivity --> SettingsFragment : contains
+EditorFragment --> PoiAdapter : contains
 
-DBHandler --> POI : manages >
+DBHandler <--> POI : analogs >
 PoiAdapter --> POI : adapts >
 SearchSuggestionContentProvider --> POI : provides >
 
+MapFragment --> SearchSuggestionContentProvider : queries >
 MapFragment --> DBHandler : queries >
 EditorFragment --> DBHandler : modifies >
 
