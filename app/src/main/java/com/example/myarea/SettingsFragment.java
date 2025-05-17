@@ -2,6 +2,7 @@ package com.example.myarea;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
@@ -10,27 +11,29 @@ import android.os.Bundle;
 import android.provider.OpenableColumns;
 import android.util.Log;
 
-import androidx.annotation.Nullable;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.preference.EditTextPreference;
 import androidx.preference.Preference;
 import androidx.preference.PreferenceFragmentCompat;
 import androidx.preference.PreferenceManager;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.file.Files;
+import java.util.Objects;
 
 public class SettingsFragment extends PreferenceFragmentCompat {
 
-    private static final int SELECT_MAP_FILE = 1001;
-    SharedPreferences sharedPreferences;
+    ActivityResultLauncher<Intent> mapFilePickerLauncher;
+    SharedPreferences sharedPreferences, defaultPreferences;
     EditTextPreference apiKeyPreference;
     Preference mapFilePreference;
     @Override
     public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
         setPreferencesFromResource(R.xml.root_preferences, rootKey);
-        init();
+        init(); // initiates all preferences and variables
         mapFilePreference.setOnPreferenceClickListener(preference -> {
             pickMapFile();
             return true;
@@ -41,27 +44,7 @@ public class SettingsFragment extends PreferenceFragmentCompat {
         Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
         intent.setType("*/*");
         intent.addCategory(Intent.CATEGORY_OPENABLE);
-        startActivityForResult(intent,SELECT_MAP_FILE);
-    }
-
-    @Override
-    public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-
-        if (requestCode == SELECT_MAP_FILE && resultCode == Activity.RESULT_OK && data != null){
-            Uri uri = data.getData();
-
-            if (uri != null) {
-                String fileName = getFileNameFromUri(uri);
-                mapFilePreference.setSummary(fileName);
-
-                sharedPreferences.edit().putString("selected_map_file",fileName).apply();
-                saveFileFromUri(uri, fileName);
-
-
-            }
-        }
-
+        mapFilePickerLauncher.launch(intent);
     }
 
     @SuppressLint("Range")
@@ -78,7 +61,7 @@ public class SettingsFragment extends PreferenceFragmentCompat {
             }
         } else if ("file".equalsIgnoreCase(uri.getScheme())) {
             // If the scheme is file, extract the name directly
-            fileName = new File(uri.getPath()).getName();
+            fileName = new File(Objects.requireNonNull(uri.getPath())).getName();
         }
 
         return fileName;
@@ -93,11 +76,11 @@ public class SettingsFragment extends PreferenceFragmentCompat {
             File destinationFile = new File(requireContext().getFilesDir(), fileName);
 
             // Write to the destination file
-            OutputStream outputStream = new FileOutputStream(destinationFile);
+            OutputStream outputStream = Files.newOutputStream(destinationFile.toPath());
             byte[] buffer = new byte[1024];
             int bytesRead;
 
-            while ((bytesRead = inputStream.read(buffer)) != -1) {
+            while ((bytesRead = Objects.requireNonNull(inputStream).read(buffer)) != -1) {
                 outputStream.write(buffer, 0, bytesRead);
             }
 
@@ -107,17 +90,31 @@ public class SettingsFragment extends PreferenceFragmentCompat {
 
             Log.d("SaveFile", "File saved successfully at " + destinationFile.getAbsolutePath());
         } catch (Exception e) {
-            e.printStackTrace();
-            Log.e("SaveFile", "Error saving file: " + e.getMessage());
+            Log.e("SaveFile", "Error saving file: " + e);
         }
     }
 
     private void init() {
-        sharedPreferences = PreferenceManager.getDefaultSharedPreferences(requireContext());
+        defaultPreferences = PreferenceManager.getDefaultSharedPreferences(requireContext());
+        sharedPreferences = requireContext().getSharedPreferences("MapPreferences", Context.MODE_PRIVATE);
         apiKeyPreference = findPreference("GH_APIKEY");
         mapFilePreference = findPreference("Chosen_Map");
         assert mapFilePreference != null;
         mapFilePreference.setSummary(sharedPreferences.getString("selected_map_file","No Map File Selected"));
+        mapFilePickerLauncher = registerForActivityResult(
+                new ActivityResultContracts.StartActivityForResult(),
+                result -> {
+                    if(result.getResultCode() == Activity.RESULT_OK && result.getData() != null){
+                        Uri uri = result.getData().getData();
+                        if(uri!=null){
+                            String fileName = getFileNameFromUri(uri);
+                            saveFileFromUri(uri,fileName);
+                            defaultPreferences.edit().putString("selected_map_file",fileName).apply();
+                            sharedPreferences.edit().putString("selected_map_file",fileName).apply();
+                        }
+                    }
+                }
+        );
     }
 
 }

@@ -1,8 +1,6 @@
 package com.example.myarea;
 
-import java.util.List;
-
-public class POI implements Comparable{
+public class POI implements Comparable<POI>{
     private final int id;
     private final String name;
     private final String description;
@@ -38,8 +36,7 @@ public class POI implements Comparable{
     }
 
     @Override
-    public int compareTo(Object ob) {
-        POI other = (POI) ob;
-        return other.id - this.id;
+    public int compareTo(POI o) {
+        return o.id - this.id;
     }
 }

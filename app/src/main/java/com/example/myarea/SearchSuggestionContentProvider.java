@@ -20,10 +20,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class SearchSuggestionContentProvider extends ContentProvider {
-    private static final String AUTHORITY = "com.example.searchsuggestion.provider";
-    private static final String TABLE_NAME = "Suggestions";
 
-    private UriMatcher uriMatcher;
     @Override
     public boolean onCreate() {
         return false;
@@ -36,13 +33,13 @@ public class SearchSuggestionContentProvider extends ContentProvider {
         DBHandler dbHandler = new DBHandler(requireContext(), sharedPreferences.getString("chosenDB","new DB") );
         SQLiteDatabase db = dbHandler.getReadableDatabase();
         String query = selectionArgs != null && selectionArgs.length > 0 ? selectionArgs[0] : "";
-        return db.query("POIs",
+        return db.query("POIs", // the table to search in
                 new String[]{
                         "id AS _id",
-                        "name AS suggest_text_1",
-                        "description AS suggest_text_2",
-                        "id AS suggest_intent_data"},
-                "name LIKE ?",
+                        "name AS suggest_text_1", // returns the name of the POI in the intent
+                        "description AS suggest_text_2", // returns the description of the POI in the intent
+                        "id AS suggest_intent_data"}, // returns the id of the POI with the intent
+                "name LIKE ?", // the filter with which to search in the table
                 new String[]{"%" + query + "%"},
                 null, null, null);
 

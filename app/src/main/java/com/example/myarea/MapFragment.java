@@ -19,10 +19,10 @@ import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.location.Priority;
-import com.google.android.gms.tasks.OnFailureListener;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.FileProvider;
 import androidx.fragment.app.Fragment;
@@ -71,13 +71,11 @@ import okhttp3.Response;
 
 /**
  * A simple {@link Fragment} subclass.
- * Use the {@link MapFragment#newInstance} factory method to
  * create an instance of this fragment.
  */
-public class MapFragment extends Fragment {
+public class MapFragment extends Fragment{
 
-    private static final int SELECT_MAP_FILE = 0;
-    public static final int PERMISSIONS_FINE_LOCATION = 99;
+    private ActivityResultLauncher<Intent> mapFilePickerLauncher;
     private MyLocationOverlay myLocationOverlay;
 
     private FusedLocationProviderClient fusedLocationProviderClient;
@@ -85,48 +83,19 @@ public class MapFragment extends Fragment {
     private LocationCallback locationCallBack;
     private SharedPreferences sharedPreferences, defaultPreferences;
     private MapView map;
+    private Polyline routePolyLine;
     private ArrayList<POI> POIs;
     private SearchView searchView;
     private Context context;
-
-    // TODO: Rename parameter arguments, choose names that match
-    // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
-    private static final String ARG_PARAM1 = "param1";
-    private static final String ARG_PARAM2 = "param2";
-
-    // TODO: Rename and change types of parameters
-    private String mParam1;
-    private String mParam2;
+    private int lock = 0;
 
     public MapFragment() {
         // Required empty public constructor
     }
 
-    /**
-     * Use this factory method to create a new instance of
-     * this fragment using the provided parameters.
-     *
-     * @param param1 Parameter 1.
-     * @param param2 Parameter 2.
-     * @return A new instance of fragment MapFragment.
-     */
-    // TODO: Rename and change types and number of parameters
-    public static MapFragment newInstance(String param1, String param2) {
-        MapFragment fragment = new MapFragment();
-        Bundle args = new Bundle();
-        args.putString(ARG_PARAM1, param1);
-        args.putString(ARG_PARAM2, param2);
-        fragment.setArguments(args);
-        return fragment;
-    }
-
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        if (getArguments() != null) {
-            mParam1 = getArguments().getString(ARG_PARAM1);
-            mParam2 = getArguments().getString(ARG_PARAM2);
-        }
     }
 
     @Override
@@ -134,25 +103,28 @@ public class MapFragment extends Fragment {
         // Inflate the layout for this fragment
         View view = inflater.inflate(R.layout.fragment_map, container, false);
         AndroidGraphicFactory.createInstance(requireActivity().getApplication());
-        init(view);
+        init(view); // Initiates all variables and views
 
-        SharedPreferences sharedPreferences = context.getSharedPreferences("MapPreferences", Context.MODE_PRIVATE);
         String mapFileName = sharedPreferences.getString("selected_map_file", null);
-        if(mapFileName!=null){
+        if (mapFileName != null) {
             File savedFile = new File(context.getFilesDir(), mapFileName);
             Uri fileUri = FileProvider.getUriForFile(context, context.getPackageName() + ".fileprovider", savedFile);
             openMap(fileUri);
-        }else {
+        } else {
             Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
             intent.addCategory(Intent.CATEGORY_OPENABLE);
-            intent.setType("*/*");
-            startActivityForResult(intent, SELECT_MAP_FILE);
+            intent.setType("*/*"); //sets the MIME filter to wildcard (all file types)
+            mapFilePickerLauncher.launch(intent);
         }
+        // Check if a map is already picked from previous instances
+        // If true open it, otherwise request a map file
 
         SearchManager searchManager = (SearchManager) requireActivity().getSystemService(Context.SEARCH_SERVICE);
         if(searchManager!=null){
             searchView.setSearchableInfo(searchManager.getSearchableInfo(requireActivity().getComponentName()));
         }
+        // Connects the searchConfig xml to the searchView using the searchManager
+
         searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
             @Override
             public boolean onQueryTextSubmit(String query) {
@@ -164,15 +136,33 @@ public class MapFragment extends Fragment {
                 return false;
             }
         });
+        // Connects a QueryTextListener to the search view
+        // It is needed to update the results with changes to the query
 
-        StartLocationUpdates();
+        if (ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION)
+                == PackageManager.PERMISSION_GRANTED) {
+            fusedLocationProviderClient.getLastLocation()
+                    .addOnSuccessListener(requireActivity(), location -> {
+                        if (location != null) {
+                            LatLong current = new LatLong(location.getLatitude(), location.getLongitude());
+                            map.setCenter(current);
+                            // Set current location
+                        } else {
+                            Toast.makeText(context, "Unable to get current location", Toast.LENGTH_SHORT).show();
+                        }
+                    });
+        } else {
+            Toast.makeText(context, "Location permission not granted", Toast.LENGTH_SHORT).show();
+        }
+        // When moving from different fragments this sets the the mapCenter
 
         return view;
     }
 
     void handleSuggestionClick(String id) {
         // Find the POI with the given ID
-        POI selectedPOI = POIs.stream().filter(poi -> String.valueOf(poi.getId()).equals(id)).findFirst().orElse(null);
+        POI selectedPOI = POIs.stream().filter(
+                poi -> String.valueOf(poi.getId()).equals(id)).findFirst().orElse(null);
 
         if (selectedPOI != null) {
             // Get current location from GPS
@@ -188,47 +178,50 @@ public class MapFragment extends Fragment {
 
                                 // Calculate and display path
                                 calculatePath(current, destination);
-                            } else {
-                                Toast.makeText(context, "Unable to get current location", Toast.LENGTH_SHORT).show();
                             }
                         });
             } else {
                 Toast.makeText(context, "Location permission not granted", Toast.LENGTH_SHORT).show();
             }
-        } else {
-            Toast.makeText(context, "POI not found", Toast.LENGTH_SHORT).show();
         }
     }
 
     private void calculatePath(LatLong current, LatLong destination) {
 
         String apiKey = defaultPreferences.getString("GH_APIKEY", null);
+        // get the apiKey from the default sharedPreferences
         if(apiKey == null){
             Toast.makeText(context, "No API key provided, please provide one in the settings", Toast.LENGTH_SHORT).show();
+            return;
         }
+        // get the apiKey from the default sharedPreferences. If it's null return
         new Thread(() -> {
             try {
                 OkHttpClient client = new OkHttpClient();
-                
-                
-                // Create the URL with the coordinates and API key
-                String url = "https://graphhopper.com/api/1/route?" +
+                // create the client used for the API requests
+
+                String url =
+                        "https://graphhopper.com/api/1/route?" +
                         "point="+ destination.latitude +"," +
                         destination.longitude +
                         "&point="+ current.latitude +"," +
                         current.longitude+
                         "&profile=foot&points_encoded=false" +
                         "&key="+apiKey;
+                // Create the URL with the coordinates and API key
 
                 Request request = new Request.Builder()
                         .url(url)
                         .get()
                         .build();
+                // build the request
 
                 Response response = client.newCall(request).execute();
+                // send the request and record the response
                 if (!response.isSuccessful()) {
                     requireActivity().runOnUiThread(() -> 
                         Toast.makeText(context, "Error: " + response.code(), Toast.LENGTH_LONG).show()
+                        // Tell the user that the request failed
                     );
                     Log.e("GraphHopper",response.message());
                     return;
@@ -238,112 +231,111 @@ public class MapFragment extends Fragment {
                 String responseData = response.body().string();
                 JSONObject jsonResponse = new JSONObject(responseData);
                 JSONArray paths = jsonResponse.getJSONArray("paths");
+                // acquire the paths (JSONArray) to the destination
                 if (paths.length() == 0) {
                     requireActivity().runOnUiThread(() -> 
                         Toast.makeText(context, "No path found", Toast.LENGTH_LONG).show()
+                        // Tell the user that no path has been found between his location and the destination
                     );
                     return;
                 }
 
                 JSONObject path = paths.getJSONObject(0);
                 JSONArray points = path.getJSONObject("points").getJSONArray("coordinates");
+                // acquire a JSONArray of all the points in path
 
-                // Create paint for the polyline
-                Paint paint = getPaint(AndroidGraphicFactory.INSTANCE.createColor(255, 0, 0, 255),10,Style.STROKE);
-
-                // Create and add polyline to map
-                Polyline routePolyLine = new Polyline(paint, AndroidGraphicFactory.INSTANCE);
+                routePolyLine.clear(); // clear previous route (if there was one)
                 for (int i = 0; i < points.length(); i++) {
                     JSONArray point = points.getJSONArray(i);
                     double lon = point.getDouble(0);
                     double lat = point.getDouble(1);
                     routePolyLine.getLatLongs().add(new LatLong(lat, lon));
                 }
+                // Create and add polyline to routeLayer
 
-                requireActivity().runOnUiThread(() -> {
-                    map.getLayerManager().getLayers().add(routePolyLine);
-                    map.getLayerManager().redrawLayers();
-                });
+                requireActivity().runOnUiThread(() -> map.getLayerManager().redrawLayers());
+                // Redraw the layers now that a new route is present
 
             } catch (Exception e) {
-                e.printStackTrace();
                 requireActivity().runOnUiThread(() -> 
                     Toast.makeText(context, "Error: " + e.getMessage(), Toast.LENGTH_LONG).show()
+                    // Tell the user something has gone wrong
                 );
+                Log.e("calculatePath", Objects.requireNonNull(e.getMessage()));
             }                                                                                                                 
         }).start();
     }
 
     public void init(View view){
         context = requireContext();
+        map = view.findViewById(R.id.map);
+        searchView = view.findViewById(R.id.search);
         defaultPreferences = PreferenceManager.getDefaultSharedPreferences(context);
         sharedPreferences = context.getSharedPreferences("MapPreferences", Context.MODE_PRIVATE);
-        map = view.findViewById(R.id.map);
-        DBHandler db = new DBHandler(context,sharedPreferences.getString("chosenDB","new DB"));
-        POIs = db.loadDB();
-        searchView = view.findViewById(R.id.search);
+        fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(context);
+        // Connecting views and initiating some basic variables
+
+        Bitmap bitmap = new AndroidBitmap(BitmapFactory.decodeResource(getResources(), R.drawable.ic_maps_indicator_current_position));
+        Marker marker = new Marker(new LatLong(0,0), bitmap, 0, 0);
+        myLocationOverlay = new MyLocationOverlay(marker);
+        // defining the base locationOverlay
+
+        try (DBHandler db = new DBHandler(context,sharedPreferences.getString("chosenDB","New DB"))){
+            POIs = db.DbToArrayList();
+        }
+        // loading all the POIs in the database to an ArrayList
+
         locationRequest = new LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 100)
                 .setWaitForAccurateLocation(false)
                 .setMinUpdateIntervalMillis(2000)
                 .setMaxUpdateDelayMillis(100)
                 .build();
+        // defining the LocationRequest
         locationCallBack = new LocationCallback() {
             @Override
             public void onLocationResult(@NonNull LocationResult locationResult) {
                 super.onLocationResult(locationResult);
-                updateMap(locationResult.getLastLocation());
+                updateMap(Objects.requireNonNull(locationResult.getLastLocation()));
             }
         };
-        Bitmap bitmap = new AndroidBitmap(BitmapFactory.decodeResource(getResources(), R.drawable.ic_maps_indicator_current_position));
-        Marker marker = new Marker(null, bitmap, 0, 0);
-        myLocationOverlay = new MyLocationOverlay(marker);
-        updateGPS();
-    }
-    @Override
-    public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == SELECT_MAP_FILE && resultCode == Activity.RESULT_OK) {
-            if (data != null) {
-                Uri uri = data.getData();
-                assert uri != null;
-                String fileName = getFileNameFromUri(uri);
-                saveFileFromUri(uri, fileName);
-                SharedPreferences sharedPreferences = context.getSharedPreferences("MapPreferences", Context.MODE_PRIVATE);
-                SharedPreferences.Editor editor = sharedPreferences.edit();
-                editor.putString("selected_map_file", fileName);
-                editor.apply();
-                openMap(uri);
-            }
-        }
+        // defining the LocationCallback
+
+        mapFilePickerLauncher = registerForActivityResult(
+                new ActivityResultContracts.StartActivityForResult(),
+                result -> {
+                    if(result.getResultCode() == Activity.RESULT_OK && result.getData() != null){
+                        Uri uri = result.getData().getData();
+                        // request data in the form of a Uri
+                        if(uri!=null){
+                            String fileName = getFileNameFromUri(uri);
+                            saveFileFromUri(uri,fileName); // Save the map in storage
+                            sharedPreferences = context.getSharedPreferences("MapPreferences", Context.MODE_PRIVATE);
+                            sharedPreferences.edit().putString("selected_map_file",fileName).apply();
+                            // Save the map file name in sharedPreferences
+                            openMap(uri); // Open the map Uri
+                        }
+                    }
+                }
+        );
+        // defining the mapFilePickerLauncher
     }
 
     private void openMap(Uri uri) {
         try {
-            /*
-             * We then make some simple adjustments, such as showing a scale bar and zoom controls.
-             */
             map.getMapScaleBar().setVisible(true);
             map.setBuiltInZoomControls(true);
             map.setZoomLevelMin((byte)18);
-            /*
-             * To avoid redrawing all the tiles all the time, we need to set up a tile cache with an
-             * utility method.
-             */
+            map.setZoomLevel((byte) 19);
+            // Setting some arbitrary base settings for the map
+
             TileCache tileCache = AndroidUtil.createTileCache(
                     context,
                     "mapcache",
                     map.getModel().displayModel.getTileSize(),
                     1f,
                     map.getModel().frameBufferModel.getOverdrawFactor());
-
-            /*
-             * Now we need to set up the process of displaying a map. A map can have several layers,
-             * stacked on top of each other. A layer can be a map or some visual elements, such as
-             * markers. Here we only show a map based on a mapsforge map file. For this we need a
-             * TileRendererLayer. A TileRendererLayer needs a TileCache to hold the generated map
-             * tiles, a map file from which the tiles are generated and RenderTheme that defines the
-             * appearance of the map.
-             */
+            // To avoid redrawing all the tiles all the time,
+            // we need to set up a tile cache with an utility method.
 
             FileInputStream fis = (FileInputStream) context.getContentResolver().openInputStream(uri);
             if(fis==null){
@@ -356,54 +348,36 @@ public class MapFragment extends Fragment {
                     map.getModel().mapViewPosition,
                     AndroidGraphicFactory.INSTANCE);
             tileRendererLayer.setXmlRenderTheme(InternalRenderTheme.DEFAULT);
+            /*
+             * Now we need to set up the process of displaying a map. A map can have several layers,
+             * stacked on top of each other. A layer can be a map or some visual elements, such as
+             * markers. Here we only show a map based on a mapsforge map file. For this we need a
+             * TileRendererLayer. A TileRendererLayer needs a TileCache to hold the generated map
+             * tiles, a map file from which the tiles are generated and RenderTheme that defines the
+             * appearance of the map.
+             */
+
+            map.getLayerManager().getLayers().add(tileRendererLayer);
+            map.getLayerManager().getLayers().add(myLocationOverlay);
+            routePolyLine = new Polyline(
+                    getPaint(AndroidGraphicFactory.INSTANCE.createColor(255, 0, 0, 255),12,Style.STROKE),
+                    AndroidGraphicFactory.INSTANCE);
+            map.getLayerManager().getLayers().add(routePolyLine);
+            // Adding the locationOverlay layer and the routePolyline layer
 
             /*
              * On its own a tileRendererLayer does not know where to display the map, so we need to
              * associate it with our map.
              */
-            map.getLayerManager().getLayers().add(tileRendererLayer);
 
-            /*
-             * The map also needs to know which area to display and at what zoom level.
-             * Note: this map position is specific to Berlin area.
-             */
-
-            if (ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-                fusedLocationProviderClient.getLastLocation()
-                        .addOnSuccessListener(requireActivity(), location -> {
-                            if (location != null) {
-                                // Set current location
-                                LatLong current = new LatLong(location.getLatitude(), location.getLongitude());
-                                map.setCenter(current);
-                                Bitmap bitmap = new AndroidBitmap(BitmapFactory.decodeResource(getResources(), R.drawable.ic_maps_indicator_current_position));
-                                Marker marker = new Marker(current, bitmap, 0, 0);
-                                myLocationOverlay = new MyLocationOverlay(marker);
-                                map.getLayerManager().getLayers().add(myLocationOverlay);
-
-                            } else {
-                                Toast.makeText(context, "Unable to get current location", Toast.LENGTH_SHORT).show();
-                                map.getLayerManager().getLayers().add(myLocationOverlay);
-                            }
-                        })
-                        .addOnFailureListener(requireActivity(), new OnFailureListener() {
-                            @Override
-                            public void onFailure(@NonNull Exception e) {
-                                Toast.makeText(context, "Unable to get current location", Toast.LENGTH_SHORT).show();
-                                map.getLayerManager().getLayers().add(myLocationOverlay);
-                            }
-                        });
-            } else {
-                Toast.makeText(context, "Location permission not granted", Toast.LENGTH_SHORT).show();
-            }
-
-            map.setZoomLevel((byte) 19);
+            StartLocationUpdates();
+            // Starting the location updates
 
             loadPOIs();
+            // Loading and displaying all the POIs in the database
 
         } catch (Exception e) {
-            /*
-             * In case of map file errors avoid crash, but developers should handle these cases!
-             */
+            //noinspection CallToPrintStackTrace
             e.printStackTrace();
         }
     }
@@ -421,9 +395,11 @@ public class MapFragment extends Fragment {
         Paint infill = getPaint(AndroidGraphicFactory.INSTANCE.createColor(255, 255, 0, 0),10, Style.FILL);
         Paint outline = getPaint(AndroidGraphicFactory.INSTANCE.createColor(255, 0, 0, 0),10, Style.STROKE);
         for(POI poi:POIs) {
-            FixedPixelCircle fixedPixelCircle = new FixedPixelCircle(new LatLong(poi.getLat(),poi.getLong()),5,infill,outline, true);
+            FixedPixelCircle fixedPixelCircle = new FixedPixelCircle(
+                    new LatLong(poi.getLat(),poi.getLong()),5,infill,outline, true);
             map.getLayerManager().getLayers().add(fixedPixelCircle);
         }
+        // Adds a circle of fixed size in pixels for every POI in the database
     }
     public void saveFileFromUri(Uri uri, String fileName) {
         try {
@@ -450,7 +426,6 @@ public class MapFragment extends Fragment {
 
             Log.d("SaveFile", "File saved successfully at " + destinationFile.getAbsolutePath());
         } catch (Exception e) {
-            e.printStackTrace();
             Log.e("SaveFile", "Error saving file: " + e.getMessage());
         }
     }
@@ -477,15 +452,31 @@ public class MapFragment extends Fragment {
     private void updateGPS() {
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(context);
         if(ActivityCompat.checkSelfPermission(context, android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED){
-            fusedLocationProviderClient.getLastLocation().addOnSuccessListener(requireActivity(), this::updateMap);
-        }
-        else{
-            requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, PERMISSIONS_FINE_LOCATION);
+            fusedLocationProviderClient.getLastLocation()
+                    .addOnSuccessListener(requireActivity(), this::updateMap);
+            // request last cached location and pass it onto updateMap
         }
     }
 
     private void updateMap(Location location) {
+        if(location==null){
+            Log.w("updateMap", "Location is null. Skipping update.");
+            return;
+        }
+        // Sometimes the first few location requests return null
+
+        if(lock<3){
+            LatLong center = new LatLong(location.getLatitude(),location.getLongitude());
+            map.setCenter(center);
+            Log.d("newCenter", center.toString());
+            lock++;
+        }
+        // Sometimes the first few location request are very inaccurate
+        // I set the center a few times to ensure accuracy
+
         myLocationOverlay.setPosition(location.getLatitude(), location.getLongitude(), location.getAccuracy());
+        Log.d("current location", location.toString());
+        // Set the position of the location overlay
     }
 
     private static Paint getPaint(int color, int strokeWidth, Style style) {
@@ -494,20 +485,6 @@ public class MapFragment extends Fragment {
         paint.setStrokeWidth(strokeWidth);
         paint.setStyle(style);
         return paint;
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-
-        if (requestCode == PERMISSIONS_FINE_LOCATION) {
-            if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                updateGPS();
-            } else {
-                Toast.makeText(context, "This app requires permission to be granted in order to work properly", Toast.LENGTH_SHORT).show();
-
-            }
-        }
     }
 
     @SuppressLint("MissingPermission")

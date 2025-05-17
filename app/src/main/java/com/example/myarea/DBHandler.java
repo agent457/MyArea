@@ -5,11 +5,10 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
-import android.widget.ArrayAdapter;
 
-import java.io.File;
 import java.util.ArrayList;
 
+/** @noinspection FieldMayBeFinal*/
 public class DBHandler extends SQLiteOpenHelper {
     private String DB_NAME;
     private static final int DB_VERSION = 1;
@@ -20,7 +19,6 @@ public class DBHandler extends SQLiteOpenHelper {
     private final String DESCRIPTION_COL = "description";
     private final String LONG_COL = "lon";
     private final String LAT_COL = "lat";
-    //
 
 
     public DBHandler(Context context, String NAME){
@@ -58,52 +56,51 @@ public class DBHandler extends SQLiteOpenHelper {
         db.execSQL("DROP TABLE IF EXISTS " + POIs);
         onCreate(db);
     }
-    public ArrayList<POI> loadDB(){
+    public ArrayList<POI> DbToArrayList(){
         ArrayList<POI> POIs = new ArrayList<>();
         SQLiteDatabase db = this.getReadableDatabase();
-        Cursor cursor = null;
         String query = "SELECT id, name, description, lon, lat FROM POIs";
-        try {
-            cursor = db.rawQuery(query, null);
-            while (cursor.moveToNext()){
+        try (Cursor cursor = db.rawQuery(query, null)) {
+            // try can automatically close the cursor so no memory leak
+            while (cursor.moveToNext()) {
                 int id = cursor.getInt(cursor.getColumnIndexOrThrow(this.getID_COL()));
                 String name = cursor.getString(cursor.getColumnIndexOrThrow(this.getNAME_COL()));
                 String description = cursor.getString(cursor.getColumnIndexOrThrow(this.getDESCRIPTION_COL()));
                 double lon = cursor.getDouble(cursor.getColumnIndexOrThrow(this.getLONG_COL()));
                 double lat = cursor.getDouble(cursor.getColumnIndexOrThrow(this.getLAT_COL()));
+                // sets all these local variables to their corresponding value
+                // in the current row the cursor is on
 
                 POI poi = new POI(id, name, description, lon, lat);
                 POIs.add(poi);
+                // creates a new POI and adds the POI to the ArrayList
             }
         } catch (Exception e) {
             throw new RuntimeException(e);
-        }finally {
-            if (cursor!=null){
-                cursor.close();
-            }
         }
         return POIs;
     }
     public POI getLast(){
-        Cursor cursor = null;
         SQLiteDatabase db = this.getReadableDatabase();
-        POI poi = null;
+        POI poi;
         String query = "SELECT id, name, description, lon, lat FROM POIs";
-        try {
-            cursor = db.rawQuery(query,null);
+        try (Cursor cursor = db.rawQuery(query,null) ){
+            // try can automatically close the cursor so no memory leak
             cursor.moveToLast();
+            // moves the cursor to the last row
+
             int id = cursor.getInt(cursor.getColumnIndexOrThrow(this.getID_COL()));
             String name = cursor.getString(cursor.getColumnIndexOrThrow(this.getNAME_COL()));
             String description = cursor.getString(cursor.getColumnIndexOrThrow(this.getDESCRIPTION_COL()));
             double lon = cursor.getDouble(cursor.getColumnIndexOrThrow(this.getLONG_COL()));
             double lat = cursor.getDouble(cursor.getColumnIndexOrThrow(this.getLAT_COL()));
+            // sets all these local variables to their corresponding value
+            // in the current row the cursor is on
+
             poi = new POI(id,name,description,lon,lat);
+            // creates a new POI and adds the POI to the ArrayList
         } catch (Exception e) {
             throw new RuntimeException(e);
-        }finally {
-            if(cursor!=null){
-                cursor.close();
-            }
         }
         return poi;
     }
